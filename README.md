@@ -42,6 +42,8 @@
 - 미리보기의 이미지, 프로필 사진, 헤더는 **끌어서 위치를 옮기고, 마우스 휠로 확대**할 수 있어요.
 - 이미지 목록과 꾸미기 목록은 왼쪽 **⠿ 손잡이를 끌어서 순서를 바꿔요.** 손잡이를 선택하고 ↑↓ 방향키로도 옮길 수 있어요. 꾸미기 목록은 위쪽일수록 앞에 보여요.
 - 스티커·텍스트는 끌어서 옮기고, 파란 점을 끌어 크기를 바꿔요. 선택한 상태에서 방향키로 1px(Shift는 10px)씩 옮기고 Delete로 지워요.
+- 슬라이더 옆 숫자 칸에 값을 직접 입력할 수 있어요. 회색 글씨가 입력 가능한 범위예요.
+- 텍스트 꾸미기는 **꾸밈 높이 직접 정하기**를 켜면 글자 양과 상관없이 높이를 정하고, 글자를 위·가운데·아래로 정렬할 수 있어요.
 - **Ctrl+Z / Ctrl+Shift+Z** (Mac은 ⌘)로 되돌리기·다시 실행할 수 있어요. 글자를 입력하는 칸 안에서는 그 칸의 글자만 되돌려져요.
 - 오른쪽 위 배율 메뉴에서 미리보기를 **실제 크기(100%)** 로 바꿔 세부를 확인할 수 있어요.
 - 저장 버튼 아래 작은 숫자가 저장될 이미지의 실제 크기예요. 트위터에는 기본 해상도로도 충분하고, 고화질은 확대해 봤을 때 더 선명해요.
@@ -79,3 +81,7 @@
 - [html-to-image](https://github.com/bubkoo/html-to-image) 1.11.11 — MIT License. 소개표를 이미지로 변환하는 데 써요.
 - [Google Fonts](https://fonts.google.com)의 글꼴들 — 각 글꼴의 라이선스(SIL Open Font License 1.1 또는 Apache License 2.0)를 따르며, 만든 이미지에 자유롭게 쓸 수 있어요.
   - 본고딕(Noto Sans KR), IBM Plex Sans KR, 고운돋움, 고운바탕, 나눔명조, 함렛, 개구, 나눔손글씨 펜, 도현, 주아, 검은고딕, Outfit, Bebas Neue, Oswald, Cinzel, Playfair Display, DM Serif Display, Special Elite, Courier Prime, Space Grotesk
+
+## 직접 배포하기
+
+정적 파일(`index.html`, `style.css`, `app.js`)만으로 동작해요. GitHub Pages라면 저장소 루트에 파일을 올리고 **Settings → Pages**에서 Branch를 `main` / `/(root)`로 지정하면 돼요.

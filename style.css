@@ -65,8 +65,15 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .chk{display:flex;align-items:center;gap:8px;cursor:pointer;min-height:30px;font-size:14px}
 .chk input{width:18px;height:18px;accent-color:var(--e-acc)}
 .rng{display:block;font-size:13px;font-weight:700;color:var(--e-sub)}
-.rng span{color:var(--e-acc)}
-.rng input{display:block;width:100%;margin-top:2px;accent-color:var(--e-acc);height:26px}
+.rh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 6px;min-height:30px}
+.rl{white-space:nowrap}
+.rr{display:flex;align-items:center;gap:4px;flex:none;margin-left:auto}
+.rhint{font-size:11px;font-weight:500;color:var(--e-sub);opacity:.7;white-space:nowrap}
+.rr i{font-style:normal;font-size:12px;font-weight:600;min-width:10px}
+.num{width:58px;height:28px;border:1px solid var(--e-line);border-radius:7px;background:var(--e-field);padding:0 6px;font-size:14px;font-weight:700;color:var(--e-ink);text-align:right;-moz-appearance:textfield}
+.num::-webkit-inner-spin-button,.num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num:focus-visible{outline:2px solid var(--e-acc);outline-offset:0}
+.rng input[type=range]{display:block;width:100%;margin-top:2px;accent-color:var(--e-acc);height:24px}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--e-line);background:var(--e-field);font-weight:700;cursor:pointer;text-align:center}
 .btn:hover{border-color:var(--e-acc)}
@@ -100,7 +107,7 @@ input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-vis
 .item .ctl{display:flex;flex-direction:column;gap:6px}
 .item .ctl input[type=text],.item textarea,.item select{padding:7px 10px;font-size:15px}
 .item select{height:38px}
-.item label.rng{font-size:12px}
+.item .rng{font-size:12px}
 .ihead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .badge{font-size:12px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--e-acc-soft);color:var(--e-acc)}
 .btns{display:flex;flex-wrap:wrap;gap:4px}
@@ -556,3 +563,7 @@ details.sub[open]>summary{margin-bottom:8px}
 .sorting{cursor:grabbing}
 .sorting .grip{cursor:grabbing}
 details.oitem.dragging{opacity:.85;box-shadow:0 10px 24px rgba(0,0,0,.18);border-color:var(--e-acc);position:relative;z-index:2;background:var(--e-pn)}
+
+/* 텍스트 꾸밈 높이 고정 */
+.tx.fixh{display:flex;flex-direction:column;justify-content:var(--va,center)}
+.boxh{display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:10px;background:var(--e-field)}

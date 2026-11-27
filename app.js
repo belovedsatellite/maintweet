@@ -288,11 +288,12 @@ function objHTML(o){
   const s = o.id === sel ? ' sel' : '';
   if (o.type === 'sticker')
     return `<div class="obj stk${s}" data-id="${o.id}" style="${base}"><img src="${o.url}" alt="" draggable="false" style="transform:scaleX(${o.flip ? -1 : 1});opacity:${o.op / 100}"><i class="h"></i></div>`;
-  const st = `${base};font-size:${o.size}px;text-align:${o.align};font-family:${objFont(o).replace(/"/g, "'")};font-weight:${o.bold ? 700 : 400};opacity:${o.op / 100}${o.custom ? `;--cfg:${o.fg};--cbg:${o.bg}` : ''}`;
+  const fixH = o.hFix ? `;height:${o.h || 120}px;--va:${{top:'flex-start', middle:'center', bottom:'flex-end'}[o.valign || 'middle']}` : '';
+  const st = `${base}${fixH};font-size:${o.size}px;text-align:${o.align};font-family:${objFont(o).replace(/"/g, "'")};font-weight:${o.bold ? 700 : 400};opacity:${o.op / 100}${o.custom ? `;--cfg:${o.fg};--cbg:${o.bg}` : ''}`;
   const bub = o.kind === 'bubble' || o.kind === 'line';
   const tail = bub ? ` tail-${o.tail || 'bl'}` : '';
   const tv = '';
-  return `<div class="obj tx k-${o.kind}${tail}${o.custom ? ' custom' : ''}${s}" data-id="${o.id}" style="${st}${tv}">${bub ? tailSVG(o) : ''}<div class="tb">${esc(o.text)}</div>${o.kind === 'quote' && o.by ? `<div class="by">— ${esc(o.by)}</div>` : ''}<i class="h"></i></div>`;
+  return `<div class="obj tx k-${o.kind}${tail}${o.custom ? ' custom' : ''}${o.hFix ? ' fixh' : ''}${s}" data-id="${o.id}" style="${st}${tv}">${bub ? tailSVG(o) : ''}<div class="tb">${esc(o.text)}</div>${o.kind === 'quote' && o.by ? `<div class="by">— ${esc(o.by)}</div>` : ''}<i class="h"></i></div>`;
 }
 function tailSVG(o){
   const pos = o.tail || 'bl'; if (pos === 'none') return '';
@@ -313,7 +314,10 @@ function renderObjs(){ $('#layer').innerHTML = S.objs.map(objHTML).join(''); }
 
 const fontOpts = cur => `<option value="body"${cur === 'body' ? ' selected' : ''}>본문 글꼴</option><option value="title"${cur === 'title' ? ' selected' : ''}>제목 글꼴</option>` +
   Object.keys(FONTS).map(f => `<option value="${f}"${cur === f ? ' selected' : ''}>${FONTS[f][0]}</option>`).join('');
-function rng(label, k, min, max, v, step = 1){ return `<label class="rng">${label} <span>${v}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-k="${k}"></label>`; }
+// 슬라이더 + 숫자 직접 입력 (옆에 회색으로 범위 표시)
+function rng(label, k, min, max, v, step = 1, unit = ''){
+  return `<div class="rng"><div class="rh"><span class="rl">${label}</span><span class="rr"><span class="rhint">${min}–${max}</span><input type="number" class="num" min="${min}" max="${max}" step="${step}" value="${v}" aria-label="${label} 값">${unit ? `<i>${unit}</i>` : ''}</span></div><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-k="${k}" aria-label="${label}"></div>`;
+}
 const openObjs = new Set();
 const GRIP = '<span class="grip" tabindex="0" role="button" aria-label="끌어서 순서 바꾸기 (방향키로도 이동)" title="끌어서 순서 바꾸기">⠿</span>';
 const preview = o => (o.text || '').replace(/\s+/g, ' ').trim().slice(0, 28) || '(빈 텍스트)';
@@ -328,7 +332,7 @@ function renderObjList(){
       ? `<summary>${GRIP}<img class="sum-th" src="${o.url}" alt=""><span class="badge">스티커</span><span class="sum-tx">${Math.round(o.w)}px</span></summary>`
       : `<summary>${GRIP}<span class="sum-ic k-${o.kind}"></span><span class="badge">${KIND_NAMES[o.kind]}</span><span class="sum-tx">${esc(preview(o))}</span></summary>`;
     const wrap = body => `<details class="item oitem${o.id === sel ? ' sel' : ''}" data-id="${o.id}"${openObjs.has(o.id) ? ' open' : ''}>${head}<div class="ctl obody">${body}</div></details>`;
-    if (o.type === 'sticker') return wrap(`${rng('크기', 'w', 30, 1600, Math.round(o.w))}<div class="two">${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}</div>${btns}`);
+    if (o.type === 'sticker') return wrap(`${rng('크기', 'w', 30, 1600, Math.round(o.w), 1, 'px')}<div class="two">${rng('회전', 'rot', -180, 180, o.rot, 1, '°')}${rng('투명도', 'op', 10, 100, o.op, 1, '%')}</div>${btns}`);
     const bub = o.kind === 'bubble' || o.kind === 'line';
     const alignSel = `<select data-k="align">${[['left','왼쪽 정렬'],['center','가운데 정렬'],['right','오른쪽 정렬']].map(([k, v]) => `<option value="${k}"${k === o.align ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
     return wrap(`
@@ -340,10 +344,12 @@ function renderObjList(){
         ${bub ? `<select data-k="tail">${[['bl','꼬리 왼쪽 아래'],['bc','꼬리 가운데 아래'],['br','꼬리 오른쪽 아래'],['tl','꼬리 왼쪽 위'],['tc','꼬리 가운데 위'],['tr','꼬리 오른쪽 위'],['none','꼬리 없음']].map(([k, v]) => `<option value="${k}"${k === (o.tail || 'bl') ? ' selected' : ''}>${v}</option>`).join('')}</select>` : ''}
         ${alignSel}
       </div>
-      ${bub && o.tail !== 'none' ? `<div class="two">${rng('꼬리 길이', 'tl', 20, 400, o.tl ?? 80)}${rng('꼬리 너비', 'tw', 20, 300, o.tw ?? 90)}</div>
-      <div class="two">${rng('꼬리 기울기', 'tip', -60, 60, o.tip ?? 0)}${o.tail === 'bc' || o.tail === 'tc' ? '<span></span>' : rng('꼬리 위치', 'tx', 0, 80, o.tx ?? 15)}</div>` : ''}
-      <div class="two">${rng('글자 크기', 'size', 12, 140, o.size)}${rng('너비', 'w', 60, 1800, Math.round(o.w))}</div>
-      <div class="two">${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}</div>
+      ${bub && o.tail !== 'none' ? `<div class="two">${rng('꼬리 길이', 'tl', 20, 400, o.tl ?? 80, 1, '%')}${rng('꼬리 너비', 'tw', 20, 300, o.tw ?? 90, 1, '%')}</div>
+      <div class="two">${rng('꼬리 기울기', 'tip', -60, 60, o.tip ?? 0, 1, '°')}${o.tail === 'bc' || o.tail === 'tc' ? '<span></span>' : rng('꼬리 위치', 'tx', 0, 80, o.tx ?? 15, 1, '%')}</div>` : ''}
+      <div class="two">${rng('글자 크기', 'size', 12, 140, o.size, 1, 'px')}${rng('너비', 'w', 60, 1800, Math.round(o.w), 1, 'px')}</div>
+      <div class="boxh"><label class="chk"><input type="checkbox" data-k="hFix"${o.hFix ? ' checked' : ''}> 꾸밈 높이 직접 정하기</label>
+        ${o.hFix ? `<div class="two">${rng('높이', 'h', 20, 1600, Math.round(o.h || 120), 1, 'px')}<label class="field"><span class="lb">글자 세로 정렬</span><select data-k="valign">${[['top','위'],['middle','가운데'],['bottom','아래']].map(([k, v]) => `<option value="${k}"${(o.valign || 'middle') === k ? ' selected' : ''}>${v}</option>`).join('')}</select></label></div>` : ''}</div>
+      <div class="two">${rng('회전', 'rot', -180, 180, o.rot, 1, '°')}${rng('투명도', 'op', 10, 100, o.op, 1, '%')}</div>
       <div class="clr"><label class="chk"><input type="checkbox" data-k="bold"${o.bold ? ' checked' : ''}> 굵게</label>
         <label class="chk"><input type="checkbox" data-k="custom"${o.custom ? ' checked' : ''}> 색 직접 지정</label>
         ${o.custom ? `<label>글자 <input type="color" data-k="fg" value="${o.fg}"></label><label>배경 <input type="color" data-k="bg" value="${o.bg}"></label>` : ''}</div>
@@ -396,13 +402,16 @@ $('#stkIn').addEventListener('change', async e => {
 $('#objList').addEventListener('input', e => {
   const t = e.target, it = t.closest('.item'); if (!it || !t.dataset.k) return;
   const o = S.objs.find(x => x.id === it.dataset.id), k = t.dataset.k;
-  if (t.type === 'checkbox') o[k] = t.checked;
-  else if (t.type === 'range') { o[k] = +t.value; const sp = t.parentElement.querySelector('span'); if (sp) sp.textContent = t.value; }
+  if (t.type === 'checkbox') {
+    o[k] = t.checked;
+    if (k === 'hFix' && t.checked && !o.h) { const el = $(`#layer .obj[data-id="${o.id}"]`); o.h = el ? Math.round(el.offsetHeight) : 120; }
+  }
+  else if (t.type === 'range') o[k] = +t.value;
   else o[k] = t.value;
   sel = o.id;
   if (k === 'text') { const st = it.querySelector('.sum-tx'); if (st) st.textContent = preview(o); }
   renderObjs(); save();
-  if (k === 'kind' || k === 'custom' || k === 'tail') renderObjList();
+  if (k === 'kind' || k === 'custom' || k === 'tail' || k === 'hFix') renderObjList();
 });
 $('#objList').addEventListener('click', e => {
   const it = e.target.closest('.item'); if (!it) return;
@@ -427,7 +436,7 @@ $('#layer').addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation();
   const o = S.objs.find(x => x.id === el.dataset.id);
   selectObj(o.id, true);
-  drag = {o, el, mode:e.target.classList.contains('h') ? 'size' : 'move', x0:e.clientX, y0:e.clientY, sx:o.x, sy:o.y, sw:o.w, moved:false};
+  drag = {o, el, mode:e.target.classList.contains('h') ? 'size' : 'move', x0:e.clientX, y0:e.clientY, sx:o.x, sy:o.y, sw:o.w, sh:o.h || el.offsetHeight, moved:false};
   el.setPointerCapture(e.pointerId);
 });
 window.addEventListener('pointermove', e => {
@@ -435,7 +444,10 @@ window.addEventListener('pointermove', e => {
   const dx = (e.clientX - drag.x0) / scale, dy = (e.clientY - drag.y0) / scale, {o, el} = drag;
   drag.moved = true;
   if (drag.mode === 'move') { o.x = Math.round(drag.sx + dx); o.y = Math.round(drag.sy + dy); el.style.left = o.x + 'px'; el.style.top = o.y + 'px'; }
-  else { o.w = Math.max(30, Math.round(drag.sw + dx)); el.style.width = o.w + 'px'; }
+  else {
+    o.w = Math.max(30, Math.round(drag.sw + dx)); el.style.width = o.w + 'px';
+    if (o.type === 'text' && o.hFix) { o.h = Math.max(20, Math.round(drag.sh + dy)); el.style.height = o.h + 'px'; }
+  }
 });
 window.addEventListener('pointerup', () => { if (!drag) return; const m = drag.moved; drag = null; if (m) { renderObjList(); save(); } });
 $('#stage').addEventListener('pointerdown', e => { if (!e.target.closest('.obj') && sel) selectObj(null); });
@@ -524,8 +536,8 @@ function renderFavList(){
       <input type="text" data-k="name" value="${esc(f.name)}" placeholder="캐릭터명 / 페어명">
       <input type="text" data-k="source" value="${esc(f.source)}" placeholder="출처 (예: @artist 님)">
       <select data-k="frame" aria-label="액자"><option value="auto">액자: 기본 설정 따름</option>${Object.entries(FRAMES).map(([k, v]) => `<option value="${k}"${f.frame === k ? ' selected' : ''}>액자: ${v}</option>`).join('')}</select>
-      <div class="two"><label class="rng">가로 위치<input type="range" min="0" max="100" value="${f.px ?? 50}" data-k="px"></label><label class="rng">세로 위치<input type="range" min="0" max="100" value="${f.pos}" data-k="pos"></label></div>
-      <label class="rng">확대 <span>${f.zoom || 100}</span>%<input type="range" min="100" max="400" step="5" value="${f.zoom || 100}" data-k="zoom"></label>
+      <div class="two">${rng('가로 위치', 'px', 0, 100, Math.round(f.px ?? 50), 1, '%')}${rng('세로 위치', 'pos', 0, 100, Math.round(f.pos ?? 50), 1, '%')}</div>
+      ${rng('확대', 'zoom', 100, 400, f.zoom || 100, 5, '%')}
       <div class="btns"><button data-a="reset">위치 초기화</button><button data-a="del" class="danger">삭제</button></div>
     </div></details>`).join('');
 }
@@ -547,7 +559,6 @@ $('#favList').addEventListener('input', e => {
   const f = S.favs.find(x => x.id === it.dataset.id);
   f[t.dataset.k] = t.type === 'range' ? +t.value : t.value;
   if (t.dataset.k === 'pos' || t.dataset.k === 'px') it.querySelector('.th').style.objectPosition = bgPos(f);
-  if (t.dataset.k === 'zoom') t.parentElement.querySelector('span').textContent = t.value;
   if (t.dataset.k === 'genre' || t.dataset.k === 'name') it.querySelector('.sum-tx').textContent = [f.genre, f.name].filter(Boolean).join(' · ') || '캡션 없음';
   update();
 });
@@ -649,6 +660,25 @@ $('#cb').addEventListener('wheel', e => {
   applyBg(el, t);
   clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { t.after(); save(); }, 300);
 }, {passive:false});
+
+/* ───────── 슬라이더 숫자 입력 동기화 ───────── */
+const pairOf = el => { const r = el.closest('.rng'); return r ? [r.querySelector('input[type=range]'), r.querySelector('.num')] : []; };
+function pushNum(n, clampIt){
+  const [r] = pairOf(n); if (!r || n.value === '') return;
+  let v = Number(n.value); if (!Number.isFinite(v)) return;
+  const lo = +r.min, hi = +r.max;
+  if (v < lo || v > hi) { if (!clampIt) return; v = Math.min(hi, Math.max(lo, v)); n.value = v; }
+  if (+r.value === v) return;
+  r.value = v; r.dispatchEvent(new Event('input', {bubbles:true}));
+}
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.classList && t.classList.contains('num')) pushNum(t, false);
+  else if (t.type === 'range') { const [, n] = pairOf(t); if (n && document.activeElement !== n) n.value = t.value; }
+});
+document.addEventListener('change', e => { if (e.target.classList && e.target.classList.contains('num')) { pushNum(e.target, true); const [r] = pairOf(e.target); if (r) e.target.value = r.value; } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('num')) e.target.blur(); });
+function syncNums(){ $$('.rng').forEach(g => { const r = g.querySelector('input[type=range]'), n = g.querySelector('.num'); if (r && n && document.activeElement !== n) n.value = r.value; }); }
 
 /* ───────── 목록 끌어서 순서 바꾸기 (이미지·꾸미기 공통) ───────── */
 function sortable(list, getArr, setArr, reversed, after){
@@ -772,6 +802,7 @@ function syncInputs(){
   bindTitles(document);
   $('#profileTh').style.backgroundImage = S.profile ? `url(${S.profile.url})` : '';
   $('#headerTh').style.backgroundImage = S.header ? `url(${S.header.url})` : '';
+  syncNums();
 }
 async function pickSingle(e, key, max){
   const file = e.target.files[0]; e.target.value = '';
@@ -899,6 +930,7 @@ function hydrate(o){
     return {...c, type:'text', kind, text:str(x.text, 2000), by:str(x.by, 120), size:num(x.size, 8, 300, 30),
       align:pick(x.align, ['left','center','right'], 'left'), bold:!!x.bold, font:x.font === 'body' || x.font === 'title' || FONTS[x.font] ? x.font : 'body',
       custom:!!x.custom, fg:hex(x.fg, '#18181c'), bg:hex(x.bg, '#ffffff'),
+      hFix:!!x.hFix, h:num(x.h, 20, 4000, 120), valign:pick(x.valign, ['top','middle','bottom'], 'middle'),
       tail:pick(x.tail, ['bl','bc','br','tl','tc','tr','none'], 'bl'), tl:num(x.tl, 20, 400, 80), tw:num(x.tw, 20, 300, 90), tip:num(x.tip, -60, 60, 0), tx:num(x.tx, 0, 80, 15)};
   }).filter(Boolean);
   [n.profile, n.header, ...n.favs].forEach(x => {

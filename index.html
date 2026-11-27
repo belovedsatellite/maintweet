@@ -58,10 +58,10 @@
           <label class="field"><span class="lb">모양</span>
             <select data-bind="pfShape"><option value="circle">원형</option><option value="round">둥근 사각형</option><option value="square">사각형</option></select>
           </label>
-          <label class="rng">크기 <span data-v="pfSize"></span>px<input type="range" min="90" max="260" step="5" data-bind="pfSize"></label>
+          <div class="rng"><div class="rh"><span class="rl">크기</span><span class="rr"><span class="rhint">90–260</span><input type="number" class="num" min="90" max="260" step="5" aria-label="크기 값"><i>px</i></span></div><input type="range" min="90" max="260" step="5" data-bind="pfSize" aria-label="크기"></div>
         </div>
         <div class="two">
-          <label class="rng">사진 확대 <span data-v="pfZoom"></span>%<input type="range" min="100" max="400" step="5" data-bind="pfZoom"></label>
+          <div class="rng"><div class="rh"><span class="rl">사진 확대</span><span class="rr"><span class="rhint">100–400</span><input type="number" class="num" min="100" max="400" step="5" aria-label="사진 확대 값"><i>%</i></span></div><input type="range" min="100" max="400" step="5" data-bind="pfZoom" aria-label="사진 확대"></div>
           <button class="btn ghost" id="pfReset">위치·확대 초기화</button>
         </div>
         <p class="hint">다이어리·디텍티브 보드 테마에서는 폴라로이드 모양으로 바뀌어요.</p>
@@ -74,13 +74,13 @@
           <button class="btn ghost" id="headerDel">삭제</button>
         </div>
         <label class="chk"><input type="checkbox" data-bind="showHeader"> 헤더 표시</label>
-        <label class="rng">높이 <span data-v="headerH"></span>px<input type="range" min="120" max="480" step="10" data-bind="headerH"></label>
+        <div class="rng"><div class="rh"><span class="rl">높이</span><span class="rr"><span class="rhint">120–480</span><input type="number" class="num" min="120" max="480" step="10" aria-label="높이 값"><i>px</i></span></div><input type="range" min="120" max="480" step="10" data-bind="headerH" aria-label="높이"></div>
         <div class="two">
-          <label class="rng">가로 위치 <span data-v="headerX"></span>%<input type="range" min="0" max="100" data-bind="headerX"></label>
-          <label class="rng">세로 위치 <span data-v="headerPos"></span>%<input type="range" min="0" max="100" data-bind="headerPos"></label>
+          <div class="rng"><div class="rh"><span class="rl">가로 위치</span><span class="rr"><span class="rhint">0–100</span><input type="number" class="num" min="0" max="100" step="1" aria-label="가로 위치 값"><i>%</i></span></div><input type="range" min="0" max="100" data-bind="headerX" aria-label="가로 위치"></div>
+          <div class="rng"><div class="rh"><span class="rl">세로 위치</span><span class="rr"><span class="rhint">0–100</span><input type="number" class="num" min="0" max="100" step="1" aria-label="세로 위치 값"><i>%</i></span></div><input type="range" min="0" max="100" data-bind="headerPos" aria-label="세로 위치"></div>
         </div>
         <div class="two">
-          <label class="rng">확대 <span data-v="headerZoom"></span>%<input type="range" min="100" max="400" step="5" data-bind="headerZoom"></label>
+          <div class="rng"><div class="rh"><span class="rl">확대</span><span class="rr"><span class="rhint">100–400</span><input type="number" class="num" min="100" max="400" step="5" aria-label="확대 값"><i>%</i></span></div><input type="range" min="100" max="400" step="5" data-bind="headerZoom" aria-label="확대"></div>
           <button class="btn ghost" id="hdReset">위치·확대 초기화</button>
         </div>
         <p class="hint">미리보기에서 프로필 사진과 헤더를 직접 끌면 위치가, 휠을 굴리면 확대 비율이 바뀌어요.</p>
@@ -117,7 +117,7 @@
     <section class="pane" data-pane="fav">
       <div class="group">
         <input type="text" class="ttl" data-title="fav" aria-label="이미지 영역 제목" placeholder="제목 (비우면 숨김)">
-        <label class="rng">한 줄에 <span data-v="favCols"></span>개<input type="range" min="1" max="6" data-bind="favCols"></label>
+        <div class="rng"><div class="rh"><span class="rl">한 줄에</span><span class="rr"><span class="rhint">1–6</span><input type="number" class="num" min="1" max="6" step="1" aria-label="한 줄에 값"><i>개</i></span></div><input type="range" min="1" max="6" data-bind="favCols" aria-label="한 줄에"></div>
         <div class="two">
           <label class="field"><span class="lb">이미지 비율</span>
             <select data-bind="favRatio">
@@ -181,12 +181,12 @@
           <label class="field"><span class="lb">본문 글꼴</span><select data-bind="font" id="fontSel"></select></label>
           <label class="field"><span class="lb">제목·닉네임 글꼴</span><select data-bind="tfont" id="tfontSel"></select></label>
         </div>
-        <label class="rng">글자 크기 <span data-v="fs"></span>%<input type="range" min="80" max="140" step="5" data-bind="fs"></label>
+        <div class="rng"><div class="rh"><span class="rl">글자 크기</span><span class="rr"><span class="rhint">80–140</span><input type="number" class="num" min="80" max="140" step="5" aria-label="글자 크기 값"><i>%</i></span></div><input type="range" min="80" max="140" step="5" data-bind="fs" aria-label="글자 크기"></div>
         <div class="two">
           <label class="field"><span class="lb">키워드 모양</span>
             <select data-bind="chipStyle"><option value="theme">테마 기본</option><option value="fill">채운 알약</option><option value="outline">테두리 알약</option><option value="square">네모 태그</option><option value="text">텍스트 / 구분</option></select>
           </label>
-          <label class="rng">모서리 둥글기 <span data-v="radius"></span>px<input type="range" min="0" max="40" step="2" data-bind="radius"></label>
+          <div class="rng"><div class="rh"><span class="rl">모서리 둥글기</span><span class="rr"><span class="rhint">0–40</span><input type="number" class="num" min="0" max="40" step="2" aria-label="모서리 둥글기 값"><i>px</i></span></div><input type="range" min="0" max="40" step="2" data-bind="radius" aria-label="모서리 둥글기"></div>
         </div>
         <label class="chk" id="decoRow"><input type="checkbox" data-bind="decoOn"> 위성·우주선·우주비행사 표시</label>
       </div>
@@ -197,7 +197,7 @@
           <button data-lay="right"><i class="li r"></i>이미지 · 정보</button>
           <button data-lay="vert"><i class="li v"></i>세로형</button>
         </div>
-        <label class="rng">정보 영역 너비 <span data-v="split"></span>%<input type="range" min="28" max="62" data-bind="split"></label>
+        <div class="rng"><div class="rh"><span class="rl">정보 영역 너비</span><span class="rr"><span class="rhint">28–62</span><input type="number" class="num" min="28" max="62" step="1" aria-label="정보 영역 너비 값"><i>%</i></span></div><input type="range" min="28" max="62" data-bind="split" aria-label="정보 영역 너비"></div>
         <label class="field"><span class="lb">이미지 영역 세로 정렬</span>
           <select data-bind="galign"><option value="flex-start">위쪽</option><option value="center">가운데</option><option value="flex-end">아래쪽</option></select>
         </label>
