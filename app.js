@@ -90,7 +90,7 @@ const mkTags = (list, on = []) => list.map(t => ({t, on:on.includes(t)}));
 function defaults(){
   return {
     v:2,
-    profile:null, header:null, showHeader:true, headerH:220, headerPos:50, pfShape:'circle', pfSize:150,
+    profile:null, header:null, showHeader:true, headerH:220, headerPos:50, headerX:50, headerZoom:100, pfShape:'circle', pfSize:150, pfX:50, pfY:50, pfZoom:100,
     nick:'닉네임', uid:'@your_id', align:'left',
     titles:{account:'ACCOUNT',genre:'GENRE',dream:'DREAM',about:'ABOUT',caution:'CAUTION',ng:'NG',fav:'FAVORITE'},
     tags:{
@@ -99,9 +99,9 @@ function defaults(){
       dream:  mkTags(['OPEN','ONLY','CBC','ALL','HL','GL','BL','CP','NCP'], ['OPEN','HL']),
     },
     tagLayout:'list',
-    about:'성인 / 주로 연성과 썰 RT\n좋아하는 장르 이야기를 마음 편히 나누고 싶어요.\n멘션·DM 모두 환영해요!',
-    caution:'타임라인이 시끄러울 수 있어요.\n스포일러는 별도 표기 후 올려요.',
-    ng:'무단 전재·AI 학습 금지\n언팔 블락 자유',
+    about:'주력 장르, 트윗 성향 등',
+    caution:'계정 관련 주의사항 등',
+    ng:'못 보는 요소 등',
     pairNG:true,
     favs:[], favCols:2, favRatio:'3/4', cap:'below', favCenter:true, frameDef:'theme', decoOn:true, srcPos:'right',
     objs:[],
@@ -226,9 +226,9 @@ function renderCard(){
   const hasHd = !!(S.header && S.showHeader);
   card.className = `th-${S.theme} lay-${S.layout} chip-${S.chipStyle} al-${S.align} pf-${S.pfShape} tl-${S.tagLayout}${hasHd ? ' has-hd' : ''}${S.decoOn ? '' : ' nodeco'}`;
 
-  const hd = hasHd ? `<div class="hd" style="height:${S.headerH}px;background-image:url(${S.header.url});background-position:50% ${S.headerPos}%"></div>` : '';
+  const hd = hasHd ? `<div class="hd" style="height:${S.headerH}px;background-image:url(${S.header.url});background-position:${S.headerX}% ${S.headerPos}%"></div>` : '';
   const pf = S.profile
-    ? `<div class="pf" style="background-image:url(${S.profile.url})"></div>`
+    ? `<div class="pf" style="background-image:url(${S.profile.url});background-position:${S.pfX}% ${S.pfY}%"></div>`
     : `<div class="pf ph">${esc([...S.nick.trim()][0] || '?')}</div>`;
   const tags = TAG_KEYS.map(tagHTML).filter(Boolean);
   const tagBlock = tags.length ? `<div class="tags" style="--n:${tags.length}">${tags.join('')}</div>` : '';
@@ -301,35 +301,42 @@ function tailSVG(o){
   const top = pos[0] === 't', side = pos[1], tx = o.tx ?? 15;
   const left = side === 'c' ? `calc(50% - ${tw / 2}px)` : side === 'l' ? `calc(${tx}% - ${tw / 2}px)` : `calc(${100 - tx}% - ${tw / 2}px)`;
   const y0 = top ? H : 0, y1 = top ? 0 : H;
-  const pts = `0,${y0} ${tw},${y0} ${tip},${y1}`;
-  const stroke = line ? `<path d="M0 ${y0} L${tip} ${y1} L${tw} ${y0}" fill="none" stroke="var(--ofg)" stroke-width="${2 * b}" stroke-linejoin="round"/>` : '';
-  return `<svg class="tail" width="${tw}" height="${H}" viewBox="0 0 ${tw} ${H}" style="left:${left};${top ? `bottom:calc(100% - 1px)` : `top:calc(100% - 1px)`}">${stroke}<polygon points="${pts}" fill="var(--obg)"/></svg>`;
+  const fi = line ? .12 * fs : 0;
+  const pts = `${fi},${y0} ${tw - fi},${y0} ${tip},${y1}`;
+  // 채움을 먼저 그려 말풍선 테두리를 덮고, 그 위에 양쪽 변만 테두리 두께로 그어 이음새가 끊기지 않게 함
+  const ins = line ? b / 2 : 0;
+  const stroke = line ? `<path d="M${ins} ${y0} L${tip} ${y1} L${tw - ins} ${y0}" fill="none" stroke="var(--ofg)" stroke-width="${b}" stroke-linejoin="miter" stroke-miterlimit="12" stroke-linecap="butt"/>` : '';
+  return `<svg class="tail" width="${tw}" height="${H}" viewBox="0 0 ${tw} ${H}" style="left:${left};${top ? `bottom:calc(100% - 1px)` : `top:calc(100% - 1px)`}"><polygon points="${pts}" fill="var(--obg)"/>${stroke}</svg>`;
 }
 function renderObjs(){ $('#layer').innerHTML = S.objs.map(objHTML).join(''); }
 
 const fontOpts = cur => `<option value="body"${cur === 'body' ? ' selected' : ''}>본문 글꼴</option><option value="title"${cur === 'title' ? ' selected' : ''}>제목 글꼴</option>` +
   Object.keys(FONTS).map(f => `<option value="${f}"${cur === f ? ' selected' : ''}>${FONTS[f][0]}</option>`).join('');
 function rng(label, k, min, max, v, step = 1){ return `<label class="rng">${label} <span>${v}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-k="${k}"></label>`; }
+const openObjs = new Set();
+const preview = o => (o.text || '').replace(/\s+/g, ' ').trim().slice(0, 28) || '(빈 텍스트)';
 function renderObjList(){
   const L = $('#objList');
+  $('#objTools').hidden = !S.objs.length;
   if (!S.objs.length) { L.innerHTML = '<p class="empty">아직 스티커나 텍스트가 없어요.</p>'; return; }
   const n = S.objs.length;
   L.innerHTML = S.objs.map((o, i) => ({o, i})).reverse().map(({o, i}) => {
-    const btns = `<div class="btns"><button data-a="front" ${i < n - 1 ? '' : 'disabled'}>앞으로</button><button data-a="back" ${i ? '' : 'disabled'}>뒤로</button><button data-a="dup">복제</button><button data-a="del" class="danger">삭제</button></div>`;
-    if (o.type === 'sticker') return `<div class="item${o.id === sel ? ' sel' : ''}" data-id="${o.id}">
-      <img class="th" src="${o.url}" alt="" style="object-fit:contain">
-      <div class="ctl"><div class="ihead"><span class="badge">스티커</span><button class="btn ghost" data-a="flip" style="min-height:30px;padding:0 10px;font-size:12.5px">좌우 반전</button></div>
-        ${rng('크기', 'w', 30, 1600, Math.round(o.w))}${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}${btns}</div></div>`;
+    const btns = `<div class="btns"><button data-a="front" ${i < n - 1 ? '' : 'disabled'}>앞으로</button><button data-a="back" ${i ? '' : 'disabled'}>뒤로</button><button data-a="dup">복제</button>${o.type === 'sticker' ? '<button data-a="flip">좌우 반전</button>' : ''}<button data-a="del" class="danger">삭제</button></div>`;
+    const head = o.type === 'sticker'
+      ? `<summary><img class="sum-th" src="${o.url}" alt=""><span class="badge">스티커</span><span class="sum-tx">${Math.round(o.w)}px</span></summary>`
+      : `<summary><span class="sum-ic k-${o.kind}"></span><span class="badge">${KIND_NAMES[o.kind]}</span><span class="sum-tx">${esc(preview(o))}</span></summary>`;
+    const wrap = body => `<details class="item oitem${o.id === sel ? ' sel' : ''}" data-id="${o.id}"${openObjs.has(o.id) ? ' open' : ''}>${head}<div class="ctl obody">${body}</div></details>`;
+    if (o.type === 'sticker') return wrap(`${rng('크기', 'w', 30, 1600, Math.round(o.w))}<div class="two">${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}</div>${btns}`);
     const bub = o.kind === 'bubble' || o.kind === 'line';
-    return `<div class="item tx-item${o.id === sel ? ' sel' : ''}" data-id="${o.id}"><div class="ctl">
-      <div class="ihead"><span class="badge">${KIND_NAMES[o.kind]}</span>${btns}</div>
+    const alignSel = `<select data-k="align">${[['left','왼쪽 정렬'],['center','가운데 정렬'],['right','오른쪽 정렬']].map(([k, v]) => `<option value="${k}"${k === o.align ? ' selected' : ''}>${v}</option>`).join('')}</select>`;
+    return wrap(`
       <textarea data-k="text" rows="2">${esc(o.text)}</textarea>
       ${o.kind === 'quote' ? `<input type="text" data-k="by" value="${esc(o.by || '')}" placeholder="출처·화자 (비우면 숨김)">` : ''}
       <div class="two">
         <select data-k="kind">${Object.entries(KIND_NAMES).map(([k, v]) => `<option value="${k}"${k === o.kind ? ' selected' : ''}>${v}</option>`).join('')}</select>
-        ${bub ? `<select data-k="tail">${[['bl','꼬리 왼쪽 아래'],['bc','꼬리 가운데 아래'],['br','꼬리 오른쪽 아래'],['tl','꼬리 왼쪽 위'],['tc','꼬리 가운데 위'],['tr','꼬리 오른쪽 위'],['none','꼬리 없음']].map(([k, v]) => `<option value="${k}"${k === (o.tail || 'bl') ? ' selected' : ''}>${v}</option>`).join('')}</select>` : `<select data-k="align">${[['left','왼쪽 정렬'],['center','가운데 정렬'],['right','오른쪽 정렬']].map(([k, v]) => `<option value="${k}"${k === o.align ? ' selected' : ''}>${v}</option>`).join('')}</select>`}
         <select data-k="font">${fontOpts(o.font)}</select>
-        ${bub ? `<select data-k="align">${[['left','왼쪽 정렬'],['center','가운데 정렬'],['right','오른쪽 정렬']].map(([k, v]) => `<option value="${k}"${k === o.align ? ' selected' : ''}>${v}</option>`).join('')}</select>` : '<span></span>'}
+        ${bub ? `<select data-k="tail">${[['bl','꼬리 왼쪽 아래'],['bc','꼬리 가운데 아래'],['br','꼬리 오른쪽 아래'],['tl','꼬리 왼쪽 위'],['tc','꼬리 가운데 위'],['tr','꼬리 오른쪽 위'],['none','꼬리 없음']].map(([k, v]) => `<option value="${k}"${k === (o.tail || 'bl') ? ' selected' : ''}>${v}</option>`).join('')}</select>` : ''}
+        ${alignSel}
       </div>
       ${bub && o.tail !== 'none' ? `<div class="two">${rng('꼬리 길이', 'tl', 20, 400, o.tl ?? 80)}${rng('꼬리 너비', 'tw', 20, 300, o.tw ?? 90)}</div>
       <div class="two">${rng('꼬리 기울기', 'tip', -60, 60, o.tip ?? 0)}${o.tail === 'bc' || o.tail === 'tc' ? '<span></span>' : rng('꼬리 위치', 'tx', 0, 80, o.tx ?? 15)}</div>` : ''}
@@ -338,9 +345,15 @@ function renderObjList(){
       <div class="clr"><label class="chk"><input type="checkbox" data-k="bold"${o.bold ? ' checked' : ''}> 굵게</label>
         <label class="chk"><input type="checkbox" data-k="custom"${o.custom ? ' checked' : ''}> 색 직접 지정</label>
         ${o.custom ? `<label>글자 <input type="color" data-k="fg" value="${o.fg}"></label><label>배경 <input type="color" data-k="bg" value="${o.bg}"></label>` : ''}</div>
-    </div></div>`;
+      ${btns}`);
   }).join('');
 }
+$('#objList').addEventListener('toggle', e => {
+  const d = e.target; if (!d.matches || !d.matches('details.oitem')) return;
+  if (d.open) openObjs.add(d.dataset.id); else openObjs.delete(d.dataset.id);
+}, true);
+$('#objOpenAll').onclick = () => { S.objs.forEach(o => openObjs.add(o.id)); renderObjList(); };
+$('#objCloseAll').onclick = () => { openObjs.clear(); renderObjList(); };
 function selectObj(id, reveal){
   sel = id;
   $$('#layer .obj').forEach(el => el.classList.toggle('sel', el.dataset.id === id));
@@ -348,7 +361,7 @@ function selectObj(id, reveal){
   if (id && reveal) {
     openTab('deco');
     const it = $(`#objList .item[data-id="${id}"]`);
-    if (it) it.scrollIntoView({block:'nearest', behavior:'smooth'});
+    if (it) { if (!it.open) { openObjs.add(id); it.open = true; } it.scrollIntoView({block:'nearest', behavior:'smooth'}); }
   }
 }
 function centerPos(w){
@@ -363,7 +376,7 @@ $('#addText').addEventListener('click', e => {
   const d = KIND_DEF[b.dataset.kind];
   const o = {id:newId(), type:'text', kind:b.dataset.kind, ...d, font:b.dataset.kind === 'tape' ? 'title' : 'body', op:100, custom:false,
     fg:S.c.text, bg:b.dataset.kind === 'memo' ? '#ffe98a' : S.c.surface, ...centerPos(d.w)};
-  S.objs.push(o); sel = o.id;
+  S.objs.push(o); sel = o.id; openObjs.add(o.id);
   renderObjs(); renderObjList(); save();
   const ta = $(`#objList .item[data-id="${o.id}"] textarea`); if (ta) { ta.focus(); ta.select(); }
 });
@@ -373,7 +386,7 @@ $('#stkIn').addEventListener('change', async e => {
     try {
       const {data} = await loadImage(file, 900);
       const o = {id:newId(), type:'sticker', ...imgObj(data), w:240, rot:0, op:100, flip:false, ...centerPos(240)};
-      S.objs.push(o); sel = o.id;
+      S.objs.push(o); sel = o.id; openObjs.add(o.id);
     } catch { toast(`${file.name} 파일을 읽지 못했어요`); }
   }
   renderObjs(); renderObjList(); save();
@@ -385,6 +398,7 @@ $('#objList').addEventListener('input', e => {
   else if (t.type === 'range') { o[k] = +t.value; const sp = t.parentElement.querySelector('span'); if (sp) sp.textContent = t.value; }
   else o[k] = t.value;
   sel = o.id;
+  if (k === 'text') { const st = it.querySelector('.sum-tx'); if (st) st.textContent = preview(o); }
   renderObjs(); save();
   if (k === 'kind' || k === 'custom' || k === 'tail') renderObjList();
 });
@@ -399,7 +413,7 @@ $('#objList').addEventListener('click', e => {
   else if (a === 'dup') {
     const c = {...arr[i], id:newId(), x:arr[i].x + 30, y:arr[i].y + 30};
     if (c.type === 'sticker') c.url = dataToURL(c.data);
-    arr.splice(i + 1, 0, c); sel = c.id;
+    arr.splice(i + 1, 0, c); sel = c.id; openObjs.add(c.id);
   } else { const j = a === 'front' ? i + 1 : i - 1; [arr[i], arr[j]] = [arr[j], arr[i]]; }
   renderObjs(); renderObjList(); save();
 });
@@ -444,6 +458,7 @@ function fit(){
   $('#scaler').style.transform = `scale(${scale})`;
   $('#wrap').style.width = W() * scale + 'px';
   $('#wrap').style.height = card.offsetHeight * scale + 'px';
+  applyBgAll();
   drawStrings();
 }
 const ro = new ResizeObserver(() => fit());
@@ -518,45 +533,66 @@ $('#favIn').addEventListener('change', async e => {
   renderFavList(); update(); toast('이미지를 추가했어요');
 });
 
-// 미리보기에서 이미지 끌어서 위치 조절, 휠로 확대
-function overflowOf(f, el){
-  const bw = el.clientWidth, bh = el.clientHeight, z = (f.zoom || 100) / 100, ar = f.ar || bh / bw;
+// 미리보기에서 이미지(대표 이미지·프로필·헤더)를 끌어서 위치 조절, 휠로 확대
+const PAN_SEL = '.fv .im, .pf:not(.ph), .hd';
+function panTarget(el){
+  const fv = el.closest('.fv');
+  if (fv && el.classList.contains('im')) {
+    const f = S.favs.find(x => x.id === fv.dataset.id);
+    return f && {o:f, kx:'px', ky:'pos', kz:'zoom', ar:f.ar, after:renderFavList};
+  }
+  if (el.classList.contains('pf') && S.profile) return {o:S, kx:'pfX', ky:'pfY', kz:'pfZoom', ar:S.profile.ar, after:syncInputs};
+  if (el.classList.contains('hd') && S.header) return {o:S, kx:'headerX', ky:'headerPos', kz:'headerZoom', ar:S.header.ar, after:syncInputs};
+  return null;
+}
+function sizeFor(t, el){
+  const z = t.o[t.kz] || 100;
+  if (!t.ar) return z === 100 ? 'cover' : `${z}% auto`;
+  return t.ar >= el.clientHeight / el.clientWidth ? `${z}% auto` : `auto ${z}%`;
+}
+function applyBg(el, t){
+  el.style.backgroundSize = sizeFor(t, el);
+  el.style.backgroundPosition = `${t.o[t.kx] ?? 50}% ${t.o[t.ky] ?? 50}%`;
+}
+function applyBgAll(){ $$('#cb ' + PAN_SEL.split(', ').join(', #cb ')).forEach(el => { const t = panTarget(el); if (t) applyBg(el, t); }); }
+function overflowOf(t, el){
+  const bw = el.clientWidth, bh = el.clientHeight, z = (t.o[t.kz] || 100) / 100, ar = t.ar || bh / bw;
   let dw, dh;
   if (ar >= bh / bw) { dw = bw * z; dh = dw * ar; } else { dh = bh * z; dw = dh / ar; }
   return [dw - bw, dh - bh];
 }
 let pan = null;
 $('#cb').addEventListener('pointerdown', e => {
-  const el = e.target.closest('.fv .im'); if (!el) return;
-  const f = S.favs.find(x => x.id === el.closest('.fv').dataset.id); if (!f) return;
+  const el = e.target.closest(PAN_SEL); if (!el) return;
+  const t = panTarget(el); if (!t) return;
   e.preventDefault();
-  const [ox, oy] = overflowOf(f, el);
-  pan = {f, el, x0:e.clientX, y0:e.clientY, px:f.px ?? 50, py:f.pos ?? 50, ox, oy, moved:false};
+  const [ox, oy] = overflowOf(t, el);
+  pan = {t, el, x0:e.clientX, y0:e.clientY, px:t.o[t.kx] ?? 50, py:t.o[t.ky] ?? 50, ox, oy, moved:false};
   el.setPointerCapture(e.pointerId);
   el.style.cursor = 'grabbing';
 });
 window.addEventListener('pointermove', e => {
   if (!pan) return;
-  const {f, el} = pan, dx = (e.clientX - pan.x0) / scale, dy = (e.clientY - pan.y0) / scale;
+  const {t, el} = pan, dx = (e.clientX - pan.x0) / scale, dy = (e.clientY - pan.y0) / scale;
   const cl = v => Math.round(Math.max(0, Math.min(100, v)));
-  if (pan.ox > 1) f.px = cl(pan.px - dx / pan.ox * 100);
-  if (pan.oy > 1) f.pos = cl(pan.py - dy / pan.oy * 100);
+  if (pan.ox > 1) t.o[t.kx] = cl(pan.px - dx / pan.ox * 100);
+  if (pan.oy > 1) t.o[t.ky] = cl(pan.py - dy / pan.oy * 100);
   pan.moved = true;
-  el.style.backgroundPosition = bgPos(f);
+  applyBg(el, t);
 });
 window.addEventListener('pointerup', () => {
   if (!pan) return;
-  pan.el.style.cursor = ''; const m = pan.moved; pan = null;
-  if (m) { renderFavList(); save(); }
+  pan.el.style.cursor = ''; const {moved, t} = pan; pan = null;
+  if (moved) { t.after(); save(); }
 });
 let wheelTimer;
 $('#cb').addEventListener('wheel', e => {
-  const el = e.target.closest('.fv .im'); if (!el) return;
-  const f = S.favs.find(x => x.id === el.closest('.fv').dataset.id); if (!f) return;
+  const el = e.target.closest(PAN_SEL); if (!el) return;
+  const t = panTarget(el); if (!t) return;
   e.preventDefault();
-  f.zoom = Math.max(100, Math.min(400, (f.zoom || 100) + (e.deltaY < 0 ? 10 : -10)));
-  el.style.backgroundSize = bgSize(f);
-  clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { renderFavList(); save(); }, 300);
+  t.o[t.kz] = Math.max(100, Math.min(400, (t.o[t.kz] || 100) + (e.deltaY < 0 ? 10 : -10)));
+  applyBg(el, t);
+  clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { t.after(); save(); }, 300);
 }, {passive:false});
 
 /* ───────── 편집기: 테마 ───────── */
@@ -631,13 +667,19 @@ function syncInputs(){
 async function pickSingle(e, key, max){
   const file = e.target.files[0]; e.target.value = '';
   if (!file) return;
-  try { const {data} = await loadImage(file, max); dropURL(S[key]); S[key] = imgObj(data); if (key === 'header') S.showHeader = true; }
+  try {
+    const {data, ratio} = await loadImage(file, max); dropURL(S[key]); S[key] = {...imgObj(data), ar:ratio};
+    if (key === 'header') Object.assign(S, {showHeader:true, headerX:50, headerPos:50, headerZoom:100});
+    else Object.assign(S, {pfX:50, pfY:50, pfZoom:100});
+  }
   catch { toast('이미지를 읽지 못했어요'); return; }
   syncInputs(); update();
 }
 $('#profileIn').addEventListener('change', e => pickSingle(e, 'profile', 640));
 $('#headerIn').addEventListener('change', e => pickSingle(e, 'header', 1800));
 $('#profileDel').onclick = () => { dropURL(S.profile); S.profile = null; syncInputs(); update(); };
+$('#pfReset').onclick = () => { Object.assign(S, {pfX:50, pfY:50, pfZoom:100}); syncInputs(); update(); };
+$('#hdReset').onclick = () => { Object.assign(S, {headerX:50, headerPos:50, headerZoom:100}); syncInputs(); update(); };
 $('#headerDel').onclick = () => { dropURL(S.header); S.header = null; syncInputs(); update(); };
 
 function openTab(name){
@@ -678,11 +720,15 @@ function hydrate(o){
   if (n.tfont && !FONTS[n.tfont]) n.tfont = '';
   const fix = x => x && x.data ? {...x, url:dataToURL(x.data)} : null;
   n.profile = fix(n.profile); n.header = fix(n.header);
+  [n.profile, n.header].forEach(x => {
+    if (!x || x.ar) return;
+    const im = new Image(); im.onload = () => { x.ar = im.naturalHeight / im.naturalWidth; applyBgAll(); }; im.src = x.url;
+  });
   n.favs = (n.favs || []).map(fix).filter(Boolean);
   n.favs.forEach(f => {
     if (f.ar) return;
     const im = new Image();
-    im.onload = () => { f.ar = im.naturalHeight / im.naturalWidth; if ((f.zoom || 100) !== 100) renderCard(); };
+    im.onload = () => { f.ar = im.naturalHeight / im.naturalWidth; applyBgAll(); };
     im.src = f.url;
   });
   n.objs = (n.objs || []).map(x => x.type === 'sticker' ? fix(x) : x).filter(Boolean);

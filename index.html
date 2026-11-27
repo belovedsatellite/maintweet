@@ -48,6 +48,10 @@
           </label>
           <label class="rng">크기 <span data-v="pfSize"></span>px<input type="range" min="90" max="260" step="5" data-bind="pfSize"></label>
         </div>
+        <div class="two">
+          <label class="rng">사진 확대 <span data-v="pfZoom"></span>%<input type="range" min="100" max="400" step="5" data-bind="pfZoom"></label>
+          <button class="btn ghost" id="pfReset">위치·확대 초기화</button>
+        </div>
         <p class="hint">다이어리·디텍티브 보드 테마에서는 폴라로이드 모양으로 바뀌어요.</p>
       </div>
       <div class="group">
@@ -59,7 +63,15 @@
         </div>
         <label class="chk"><input type="checkbox" data-bind="showHeader"> 헤더 표시</label>
         <label class="rng">높이 <span data-v="headerH"></span>px<input type="range" min="120" max="480" step="10" data-bind="headerH"></label>
-        <label class="rng">세로 위치 <span data-v="headerPos"></span>%<input type="range" min="0" max="100" data-bind="headerPos"></label>
+        <div class="two">
+          <label class="rng">가로 위치 <span data-v="headerX"></span>%<input type="range" min="0" max="100" data-bind="headerX"></label>
+          <label class="rng">세로 위치 <span data-v="headerPos"></span>%<input type="range" min="0" max="100" data-bind="headerPos"></label>
+        </div>
+        <div class="two">
+          <label class="rng">확대 <span data-v="headerZoom"></span>%<input type="range" min="100" max="400" step="5" data-bind="headerZoom"></label>
+          <button class="btn ghost" id="hdReset">위치·확대 초기화</button>
+        </div>
+        <p class="hint">미리보기에서 프로필 사진과 헤더를 직접 끌면 위치가, 휠을 굴리면 확대 비율이 바뀌어요.</p>
       </div>
       <div class="group">
         <h4>계정</h4>
@@ -83,9 +95,9 @@
     <!-- 소개 -->
     <section class="pane" data-pane="text">
       <p class="hint">처음에 들어 있는 글은 예시예요. 비워 둔 칸은 소개표에서 빠져요.</p>
-      <div class="group"><input type="text" class="ttl" data-title="about" aria-label="ABOUT 제목"><textarea data-bind="about" rows="5"></textarea></div>
-      <div class="group"><input type="text" class="ttl" data-title="caution" aria-label="CAUTION 제목"><textarea data-bind="caution" rows="4"></textarea></div>
-      <div class="group"><input type="text" class="ttl" data-title="ng" aria-label="NG 제목"><textarea data-bind="ng" rows="4"></textarea></div>
+      <div class="group"><input type="text" class="ttl" data-title="about" aria-label="ABOUT 제목"><textarea data-bind="about" rows="5" placeholder="주력 장르, 트윗 성향 등"></textarea></div>
+      <div class="group"><input type="text" class="ttl" data-title="caution" aria-label="CAUTION 제목"><textarea data-bind="caution" rows="4" placeholder="계정 관련 주의사항 등"></textarea></div>
+      <div class="group"><input type="text" class="ttl" data-title="ng" aria-label="NG 제목"><textarea data-bind="ng" rows="4" placeholder="못 보는 요소 등"></textarea></div>
       <label class="chk"><input type="checkbox" data-bind="pairNG"> CAUTION과 NG를 나란히 배치</label>
     </section>
 
@@ -132,6 +144,7 @@
       </div>
       <label class="btn wide pri-soft">스티커 이미지 추가<input type="file" accept="image/*" multiple id="stkIn" hidden></label>
       <p class="hint">미리보기에서 끌어 옮기고, 파란 점을 끌어 크기(텍스트는 너비)를 바꿔요. 선택한 상태에서 방향키로 1px(Shift는 10px)씩 옮기고 Delete로 지울 수 있어요.</p>
+      <div class="objtools" id="objTools" hidden><span class="lb">목록 (위쪽이 맨 앞)</span><div class="btns"><button id="objOpenAll">모두 펼치기</button><button id="objCloseAll">모두 접기</button></div></div>
       <div id="objList" class="list"></div>
     </section>
 
