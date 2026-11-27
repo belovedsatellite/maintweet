@@ -87,6 +87,7 @@ const KIND_DEF = {
 };
 
 const mkTags = (list, on = []) => list.map(t => ({t, on:on.includes(t)}));
+const DEFAULT_TAGS = {account:['RT','마음','구독'], genre:['1차','2차','드림'], dream:['ONLY','CBC','OPEN','ALL','HL','GL','BL','CP','NCP']};
 function defaults(){
   return {
     v:2,
@@ -94,11 +95,11 @@ function defaults(){
     nick:'닉네임', uid:'@your_id', align:'left',
     titles:{account:'ACCOUNT',genre:'GENRE',dream:'DREAM',about:'ABOUT',caution:'CAUTION',ng:'NG',fav:'FAVORITE'},
     tags:{
-      account:mkTags(['RT','마음','구독'], ['RT','마음']),
-      genre:  mkTags(['1차','2차','드림'], ['2차','드림']),
-      dream:  mkTags(['OPEN','ONLY','CBC','ALL','HL','GL','BL','CP','NCP'], ['OPEN','HL']),
+      account:mkTags(DEFAULT_TAGS.account, ['RT','마음']),
+      genre:  mkTags(DEFAULT_TAGS.genre, ['2차','드림']),
+      dream:  mkTags(DEFAULT_TAGS.dream, ['OPEN','HL']),
     },
-    tagLayout:'list',
+    tagLayout:'list', tagFix1:true,
     about:'주력 장르, 트윗 성향 등',
     caution:'계정 관련 주의사항 등',
     ng:'못 보는 요소 등',
@@ -133,11 +134,11 @@ function loadImage(file, max){
       im.onerror = rej;
       im.onload = () => {
         const k = Math.min(1, max / Math.max(im.width, im.height));
-        if (k === 1 && file.size < 1.5e6) return res({data:r.result, ratio:im.height / im.width});
+        if (k === 1 && file.size < 1.5e6 && /^image\/(png|jpeg|webp|gif)$/.test(file.type)) return res({data:r.result, ratio:im.height / im.width});
         const c = document.createElement('canvas');
         c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
         c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-        const alpha = /png|gif|webp|svg/.test(file.type);
+        const alpha = /png|gif|webp|svg/.test(file.type);  // SVG 등은 PNG로 변환해 저장
         res({data:c.toDataURL(alpha ? 'image/png' : 'image/jpeg', .92), ratio:im.height / im.width});
       };
       im.src = r.result;
@@ -146,7 +147,7 @@ function loadImage(file, max){
   });
 }
 const imgObj = d => ({data:d, url:dataToURL(d)});
-const dropURL = o => { if (o && o.url) URL.revokeObjectURL(o.url); };
+const dropURL = () => {};   // 되돌리기에서 다시 쓸 수 있도록 이미지 주소를 해제하지 않음
 function alpha(hex, a){
   const h = hex.replace('#', '');
   const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h.slice(0, 6), 16);
@@ -453,14 +454,20 @@ function fit(){
   const stage = $('#stage'), card = $('#card');
   const cs = getComputedStyle(stage);
   const avail = stage.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-  scale = Math.min(1, avail / W());
+  const fitScale = Math.min(1, avail / W());
+  scale = zoomMode === 'fit' ? fitScale : +zoomMode;
   $('#scaler').style.width = W() + 'px';
   $('#scaler').style.transform = `scale(${scale})`;
   $('#wrap').style.width = W() * scale + 'px';
   $('#wrap').style.height = card.offsetHeight * scale + 'px';
   applyBgAll();
   drawStrings();
+  const pr = +$('#pr').value;
+  $('#sizeOut').textContent = `${W() * pr} × ${card.offsetHeight * pr}px`;
 }
+let zoomMode = 'fit';
+$('#zoomSel').addEventListener('change', e => { zoomMode = e.target.value; fit(); });
+$('#pr').addEventListener('change', () => fit());
 const ro = new ResizeObserver(() => fit());
 ro.observe($('#stage')); ro.observe($('#card'));
 
@@ -470,10 +477,23 @@ function renderTagEd(){
     <input type="text" class="ttl" data-title="${k}" aria-label="${k} 제목">
     <div class="tchips">${S.tags[k].map((x, i) => `<span class="tg${x.on ? ' on' : ''}"><button type="button" class="t" data-i="${i}" aria-pressed="${x.on}">${esc(x.t)}</button><button type="button" class="x" data-i="${i}" aria-label="${esc(x.t)} 삭제">✕</button></span>`).join('')}</div>
     <form class="tadd"><input type="text" placeholder="키워드 추가 (쉼표로 여러 개)" maxlength="80"><button class="btn">추가</button></form>
+    ${DEFAULT_TAGS[k].some(t => !S.tags[k].find(x => x.t === t)) ? `<button type="button" class="linkbtn" data-restore="${k}">지운 기본 키워드 다시 넣기</button>` : ''}
   </div>`).join('');
   bindTitles($('#tagEd'));
 }
+function restoreTags(k){
+  const list = S.tags[k];
+  DEFAULT_TAGS[k].forEach((t, di) => {
+    if (list.find(x => x.t === t)) return;
+    // 기본 순서에서 바로 앞에 있는 키워드 뒤에 끼워 넣기
+    let at = 0;
+    for (let p = di - 1; p >= 0; p--) { const j = list.findIndex(x => x.t === DEFAULT_TAGS[k][p]); if (j >= 0) { at = j + 1; break; } }
+    list.splice(at, 0, {t, on:false});
+  });
+}
 $('#tagEd').addEventListener('click', e => {
+  const r = e.target.closest('[data-restore]');
+  if (r) { restoreTags(r.dataset.restore); renderTagEd(); update(); return; }
   const b = e.target.closest('button[data-i]'); if (!b) return;
   const k = b.closest('.tagbox').dataset.k, i = +b.dataset.i;
   if (b.classList.contains('x')) S.tags[k].splice(i, 1); else S.tags[k][i].on = !S.tags[k][i].on;
@@ -491,20 +511,35 @@ $('#tagEd').addEventListener('submit', e => {
 });
 
 /* ───────── 편집기: 이미지 ───────── */
+const openFavs = new Set();
 function renderFavList(){
   const L = $('#favList');
+  $('#favTools').hidden = !S.favs.length;
   if (!S.favs.length) { L.innerHTML = '<p class="empty">아직 이미지가 없어요. 좋아하는 캐릭터·페어 이미지를 넣어 보세요.</p>'; return; }
-  L.innerHTML = S.favs.map((f, i) => `<div class="item" data-id="${f.id}">
-    <img class="th" src="${f.url}" alt="" style="object-position:${bgPos(f)}">
-    <div class="ctl">
+  L.innerHTML = S.favs.map((f, i) => `<details class="item oitem" data-id="${f.id}"${openFavs.has(f.id) ? ' open' : ''}>
+    <summary><img class="sum-th cover" src="${f.url}" alt="" style="object-position:${bgPos(f)}"><span class="sum-no">${i + 1}</span><span class="sum-tx">${esc([f.genre, f.name].filter(Boolean).join(' · ') || '캡션 없음')}</span></summary>
+    <div class="ctl obody">
       <input type="text" data-k="genre" value="${esc(f.genre)}" placeholder="장르명">
       <input type="text" data-k="name" value="${esc(f.name)}" placeholder="캐릭터명 / 페어명">
       <input type="text" data-k="source" value="${esc(f.source)}" placeholder="출처 (예: @artist 님)">
-      <select data-k="frame"><option value="auto">액자: 기본 설정 따름</option>${Object.entries(FRAMES).map(([k, v]) => `<option value="${k}"${f.frame === k ? ' selected' : ''}>액자: ${v}</option>`).join('')}</select>
+      <select data-k="frame" aria-label="액자"><option value="auto">액자: 기본 설정 따름</option>${Object.entries(FRAMES).map(([k, v]) => `<option value="${k}"${f.frame === k ? ' selected' : ''}>액자: ${v}</option>`).join('')}</select>
       <div class="two"><label class="rng">가로 위치<input type="range" min="0" max="100" value="${f.px ?? 50}" data-k="px"></label><label class="rng">세로 위치<input type="range" min="0" max="100" value="${f.pos}" data-k="pos"></label></div>
       <label class="rng">확대 <span>${f.zoom || 100}</span>%<input type="range" min="100" max="400" step="5" value="${f.zoom || 100}" data-k="zoom"></label>
       <div class="btns"><button data-a="up" ${i ? '' : 'disabled'}>앞으로</button><button data-a="down" ${i < S.favs.length - 1 ? '' : 'disabled'}>뒤로</button><button data-a="reset">위치 초기화</button><button data-a="del" class="danger">삭제</button></div>
-    </div></div>`).join('');
+    </div></details>`).join('');
+}
+$('#favList').addEventListener('toggle', e => {
+  const d = e.target; if (!d.matches || !d.matches('details.oitem')) return;
+  if (d.open) openFavs.add(d.dataset.id); else openFavs.delete(d.dataset.id);
+}, true);
+$('#favOpenAll').onclick = () => { S.favs.forEach(f => openFavs.add(f.id)); renderFavList(); };
+$('#favCloseAll').onclick = () => { openFavs.clear(); renderFavList(); };
+function revealFav(id){
+  openTab('fav');
+  const it = $(`#favList details[data-id="${id}"]`); if (!it) return;
+  openFavs.add(id); it.open = true;
+  it.scrollIntoView({block:'nearest', behavior:'smooth'});
+  it.classList.add('flash'); setTimeout(() => it.classList.remove('flash'), 900);
 }
 $('#favList').addEventListener('input', e => {
   const t = e.target, it = t.closest('.item'); if (!it || !t.dataset.k) return;
@@ -512,6 +547,7 @@ $('#favList').addEventListener('input', e => {
   f[t.dataset.k] = t.type === 'range' ? +t.value : t.value;
   if (t.dataset.k === 'pos' || t.dataset.k === 'px') it.querySelector('.th').style.objectPosition = bgPos(f);
   if (t.dataset.k === 'zoom') t.parentElement.querySelector('span').textContent = t.value;
+  if (t.dataset.k === 'genre' || t.dataset.k === 'name') it.querySelector('.sum-tx').textContent = [f.genre, f.name].filter(Boolean).join(' · ') || '캡션 없음';
   update();
 });
 $('#favList').addEventListener('click', e => {
@@ -527,7 +563,11 @@ $('#favIn').addEventListener('change', async e => {
   if (!files.length) return;
   toast(`이미지 ${files.length}장 불러오는 중…`);
   for (const file of files) {
-    try { const {data, ratio} = await loadImage(file, 1400); S.favs.push({id:newId(), ...imgObj(data), genre:'', name:'', source:'', pos:50, px:50, zoom:100, ar:ratio, frame:'auto'}); }
+    try {
+      const {data, ratio} = await loadImage(file, 1400);
+      const f = {id:newId(), ...imgObj(data), genre:'', name:'', source:'', pos:50, px:50, zoom:100, ar:ratio, frame:'auto'};
+      S.favs.push(f); if (files.length <= 3) openFavs.add(f.id);
+    }
     catch { toast(`${file.name} 파일을 읽지 못했어요`); }
   }
   renderFavList(); update(); toast('이미지를 추가했어요');
@@ -580,10 +620,24 @@ window.addEventListener('pointermove', e => {
   pan.moved = true;
   applyBg(el, t);
 });
+let panMovedAt = 0;
 window.addEventListener('pointerup', () => {
   if (!pan) return;
   pan.el.style.cursor = ''; const {moved, t} = pan; pan = null;
+  if (moved) panMovedAt = Date.now();
   if (moved) { t.after(); save(); }
+});
+// 미리보기의 각 부분을 누르면 해당 편집 탭으로 이동
+function focusField(sel){ const el = $(sel); if (el) { el.focus({preventScroll:true}); el.scrollIntoView({block:'center', behavior:'smooth'}); } }
+$('#cb').addEventListener('click', e => {
+  if (Date.now() - panMovedAt < 300) return;
+  const fv = e.target.closest('.fv');
+  if (fv) return revealFav(fv.dataset.id);
+  if (e.target.closest('.gal')) return openTab('fav');
+  if (e.target.closest('.head, .hd')) return openTab('info');
+  if (e.target.closest('.tags')) return openTab('tags');
+  const s = e.target.closest('.s-about, .s-caution, .s-ng');
+  if (s) { openTab('text'); focusField(`textarea[data-bind="${s.className.match(/s-(about|caution|ng)/)[1]}"]`); }
 });
 let wheelTimer;
 $('#cb').addEventListener('wheel', e => {
@@ -690,48 +744,112 @@ $('.tabs').addEventListener('click', e => { const b = e.target.closest('[data-ta
 
 /* ───────── 저장 / 불러오기 ───────── */
 const serialize = () => JSON.stringify(S, (k, v) => k === 'url' ? undefined : v);
+// 상태 복사: 이미지 데이터 문자열은 공유하고 나머지는 깊은 복사
+function snap(v){
+  if (Array.isArray(v)) return v.map(snap);
+  if (v && typeof v === 'object') { const o = {}; for (const k in v) o[k] = (k === 'data' || k === 'url') ? v[k] : snap(v[k]); return o; }
+  return v;
+}
+const sig = () => JSON.stringify(S, (k, v) => k === 'url' ? undefined : k === 'data' ? v.length + v.slice(-40) : v);
+const hist = []; let hIdx = -1;
+function commit(){
+  const s = sig();
+  if (hist[hIdx] && hist[hIdx].sig === s) return;
+  hist.splice(hIdx + 1); hist.push({sig:s, st:snap(S)});
+  if (hist.length > 80) hist.shift();
+  hIdx = hist.length - 1; updHist();
+}
+function updHist(){ $('#undo').disabled = hIdx <= 0; $('#redo').disabled = hIdx >= hist.length - 1; }
+function restore(i){
+  hIdx = i; S = snap(hist[i].st); sel = null;
+  renderAll(); updHist(); writeStore();
+}
+const undo = () => { if (hIdx > 0) { restore(hIdx - 1); toast('되돌렸어요'); } };
+const redo = () => { if (hIdx < hist.length - 1) { restore(hIdx + 1); toast('다시 실행했어요'); } };
+$('#undo').onclick = undo; $('#redo').onclick = redo;
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || /INPUT|TEXTAREA/.test(document.activeElement?.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+});
+function writeStore(){
+  try { localStorage.setItem(KEY, serialize()); $('#saveWarn').hidden = true; setStatus('자동 저장됨'); }
+  catch { $('#saveWarn').hidden = false; setStatus('자동 저장 용량 초과', true); }
+}
+function setStatus(t, bad){ const s = $('#saveStat'); s.textContent = t; s.classList.toggle('bad', !!bad); }
 let saveTimer;
 function save(){
+  setStatus('저장 중…');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    try { localStorage.setItem(KEY, serialize()); $('#saveWarn').hidden = true; }
-    catch { $('#saveWarn').hidden = false; }
-  }, 500);
+  saveTimer = setTimeout(() => { writeStore(); commit(); }, 500);
 }
 function update(){ renderCard(); save(); }
+/* 불러온 데이터는 신뢰하지 않음: 모든 값을 형식·범위에 맞게 걸러서 사용 */
+const IMG_RE = /^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const ID_RE = /^[a-z0-9]{1,16}$/;
+const str = (v, max = 4000) => typeof v === 'string' ? v.slice(0, max) : '';
+const num = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+const pick = (v, list, d) => list.includes(v) ? v : d;
+const hex = (v, d) => typeof v === 'string' && HEX_RE.test(v) ? v.toLowerCase() : d;
+const img = x => x && typeof x.data === 'string' && IMG_RE.test(x.data) ? {data:x.data, url:dataToURL(x.data), ar:num(x.ar, .01, 100, undefined)} : null;
+const ENUMS = {layout:['left','right','vert'], align:['left','center'], pfShape:['circle','round','square'], tagLayout:['list','row','stack'],
+  cap:['below','over','none'], favRatio:['1/1','3/4','2/3','4/3','16/9'], srcPos:['right','below'], galign:['flex-start','center','flex-end'],
+  chipStyle:['theme','fill','outline','square','text'], frameDef:Object.keys(FRAMES), ratio:Object.keys(RATIOS)};
+const NUMS = {headerH:[120,480], headerPos:[0,100], headerX:[0,100], headerZoom:[100,400], pfSize:[90,260], pfX:[0,100], pfY:[0,100], pfZoom:[100,400],
+  favCols:[1,6], fs:[80,140], radius:[0,40], split:[28,62]};
 function hydrate(o){
-  const d = defaults();
-  o = o || {};
+  const d = defaults(), n = defaults();
+  o = o && typeof o === 'object' ? o : {};
   if (o.v !== 2) {   // 1차 버전 데이터: 내용만 가져오고 디자인은 새 기본값
     const keep = ['profile','header','showHeader','pfShape','nick','uid','titles','tags','about','caution','ng','pairNG','favs','favRatio','cap','favCenter'];
-    const n = {}; keep.forEach(k => { if (k in o) n[k] = o[k]; });
-    n.objs = (o.stickers || []).map(s => ({...s, type:'sticker'}));
-    o = n;
+    const m = {}; keep.forEach(k => { if (k in o) m[k] = o[k]; });
+    m.objs = Array.isArray(o.stickers) ? o.stickers.map(s => ({...s, type:'sticker'})) : [];
+    o = m;
   }
-  const n = Object.assign(d, o);
-  n.v = 2;
-  n.titles = {...defaults().titles, ...o.titles};
-  n.tags = {...defaults().tags, ...o.tags};
-  if (!THEMES[n.theme]) { n.theme = 'simple'; n.pal = 0; }
-  n.c = {...THEMES[n.theme].pals[0][1], ...o.c};
-  if (!RATIOS[n.ratio]) n.ratio = '16:9';
-  if (![1200, 1600, 1920].includes(n.width)) n.width = 1600;
-  if (n.font && !FONTS[n.font]) n.font = '';
-  if (n.tfont && !FONTS[n.tfont]) n.tfont = '';
-  const fix = x => x && x.data ? {...x, url:dataToURL(x.data)} : null;
-  n.profile = fix(n.profile); n.header = fix(n.header);
-  [n.profile, n.header].forEach(x => {
+  for (const k in ENUMS) n[k] = pick(o[k], ENUMS[k], d[k]);
+  for (const k in NUMS) n[k] = Math.round(num(o[k], NUMS[k][0], NUMS[k][1], d[k]));
+  for (const k of ['showHeader','pairNG','favCenter','decoOn']) n[k] = k in o ? !!o[k] : d[k];
+  for (const k of ['nick','uid']) n[k] = k in o ? str(o[k], 60) : d[k];
+  for (const k of ['about','caution','ng']) n[k] = k in o ? str(o[k]) : d[k];
+  n.width = pick(Number(o.width), [1200, 1600, 1920], d.width);
+  n.theme = THEMES[o.theme] ? o.theme : 'simple';
+  n.pal = Math.round(num(o.pal, -1, THEMES[n.theme].pals.length - 1, 0));
+  const base = THEMES[n.theme].pals[Math.max(0, n.pal)][1], oc = o.c || {};
+  n.c = {}; for (const [k] of COLOR_KEYS) n.c[k] = hex(oc[k], base[k]);
+  n.font = FONTS[o.font] ? o.font : ''; n.tfont = FONTS[o.tfont] ? o.tfont : '';
+  if (o.titles && typeof o.titles === 'object') for (const k in d.titles) if (k in o.titles) n.titles[k] = str(o.titles[k], 60);
+  if (o.tags && typeof o.tags === 'object') for (const k of TAG_KEYS) if (Array.isArray(o.tags[k]))
+    n.tags[k] = o.tags[k].slice(0, 200).map(x => ({t:str(x && x.t, 80), on:!!(x && x.on)})).filter(x => x.t);
+  // 이전 버전에서 빠졌던 DREAM 기본 키워드 OPEN을 한 번 채워 넣음
+  if (!o.tagFix1 && !n.tags.dream.find(x => x.t === 'OPEN')) {
+    const c = n.tags.dream.findIndex(x => x.t === 'CBC');
+    n.tags.dream.splice(c >= 0 ? c + 1 : 0, 0, {t:'OPEN', on:false});
+  }
+  n.tagFix1 = true;
+  n.profile = img(o.profile); n.header = img(o.header);
+  n.favs = (Array.isArray(o.favs) ? o.favs : []).map(f => {
+    const im = img(f); if (!im) return null;
+    return {...im, id:ID_RE.test(f.id) ? f.id : newId(), genre:str(f.genre, 80), name:str(f.name, 80), source:str(f.source, 120),
+      pos:num(f.pos, 0, 100, 50), px:num(f.px, 0, 100, 50), zoom:num(f.zoom, 100, 400, 100), frame:pick(f.frame, ['auto', ...Object.keys(FRAMES)], 'auto')};
+  }).filter(Boolean);
+  n.objs = (Array.isArray(o.objs) ? o.objs : []).map(x => {
+    if (!x || typeof x !== 'object') return null;
+    const c = {id:ID_RE.test(x.id) ? x.id : newId(), x:num(x.x, -4000, 8000, 100), y:num(x.y, -4000, 12000, 100), w:num(x.w, 10, 4000, 240),
+      rot:num(x.rot, -180, 180, 0), op:num(x.op, 0, 100, 100)};
+    if (x.type === 'sticker') { const im = img(x); return im && {...c, ...im, type:'sticker', flip:!!x.flip}; }
+    if (x.type !== 'text') return null;
+    const kind = pick(x.kind, Object.keys(KIND_NAMES), 'plain');
+    return {...c, type:'text', kind, text:str(x.text, 2000), by:str(x.by, 120), size:num(x.size, 8, 300, 30),
+      align:pick(x.align, ['left','center','right'], 'left'), bold:!!x.bold, font:x.font === 'body' || x.font === 'title' || FONTS[x.font] ? x.font : 'body',
+      custom:!!x.custom, fg:hex(x.fg, '#18181c'), bg:hex(x.bg, '#ffffff'),
+      tail:pick(x.tail, ['bl','bc','br','tl','tc','tr','none'], 'bl'), tl:num(x.tl, 20, 400, 80), tw:num(x.tw, 20, 300, 90), tip:num(x.tip, -60, 60, 0), tx:num(x.tx, 0, 80, 15)};
+  }).filter(Boolean);
+  [n.profile, n.header, ...n.favs].forEach(x => {
     if (!x || x.ar) return;
     const im = new Image(); im.onload = () => { x.ar = im.naturalHeight / im.naturalWidth; applyBgAll(); }; im.src = x.url;
   });
-  n.favs = (n.favs || []).map(fix).filter(Boolean);
-  n.favs.forEach(f => {
-    if (f.ar) return;
-    const im = new Image();
-    im.onload = () => { f.ar = im.naturalHeight / im.naturalWidth; applyBgAll(); };
-    im.src = f.url;
-  });
-  n.objs = (n.objs || []).map(x => x.type === 'sticker' ? fix(x) : x).filter(Boolean);
   return n;
 }
 function renderAll(){ syncInputs(); renderLaySeg(); renderTagEd(); renderFavList(); renderObjList(); renderThemeEd(); renderCard(); renderObjs(); }
@@ -822,5 +940,6 @@ try {
   if (raw) S = hydrate(JSON.parse(raw));
 } catch { S = defaults(); }
 renderAll();
+commit(); setStatus('자동 저장됨');
 document.fonts && document.fonts.ready.then(fit);
 }
