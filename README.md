@@ -79,7 +79,3 @@
 - [html-to-image](https://github.com/bubkoo/html-to-image) 1.11.11 — MIT License. 소개표를 이미지로 변환하는 데 써요.
 - [Google Fonts](https://fonts.google.com)의 글꼴들 — 각 글꼴의 라이선스(SIL Open Font License 1.1 또는 Apache License 2.0)를 따르며, 만든 이미지에 자유롭게 쓸 수 있어요.
   - 본고딕(Noto Sans KR), IBM Plex Sans KR, 고운돋움, 고운바탕, 나눔명조, 함렛, 개구, 나눔손글씨 펜, 도현, 주아, 검은고딕, Outfit, Bebas Neue, Oswald, Cinzel, Playfair Display, DM Serif Display, Special Elite, Courier Prime, Space Grotesk
-
-## 직접 배포하기
-
-정적 파일(`index.html`, `style.css`, `app.js`)만으로 동작해요. GitHub Pages라면 저장소 루트에 파일을 올리고 **Settings → Pages**에서 Branch를 `main` / `/(root)`로 지정하면 돼요.
