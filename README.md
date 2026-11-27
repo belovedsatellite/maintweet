@@ -10,16 +10,6 @@
 | `style.css` | 편집기 UI와 소개표 카드 스타일 |
 | `app.js` | 편집 기능, 테마, 스티커, 이미지 내보내기 |
 
-## GitHub Pages에 올리기
-
-1. GitHub에서 새 저장소(repository)를 만듭니다. 공개(Public) 저장소여야 무료 Pages를 쓸 수 있습니다.
-2. **Add file → Upload files**로 `index.html`, `style.css`, `app.js`, `README.md` 네 개를 저장소 맨 위(루트)에 올리고 Commit 합니다.
-3. 저장소의 **Settings → Pages**로 갑니다.
-4. **Build and deployment**에서 Source를 `Deploy from a branch`, Branch를 `main` / `/(root)`로 두고 Save를 누릅니다.
-5. 1~2분 뒤 `https://<아이디>.github.io/<저장소이름>/` 주소로 사이트가 열립니다.
-
-> 컴퓨터에서 `index.html`을 더블클릭해 바로 열어도 대부분 동작하지만, 이 경우 브라우저 보안 정책 때문에 저장한 이미지에 웹폰트가 빠질 수 있습니다. 실제 사용은 GitHub Pages 주소에서 하세요.
-
 ## 기능
 
 - **레이아웃**: 왼쪽 정보 · 오른쪽 이미지(기본), 좌우 반전, 세로형. 정보 영역 너비(28~62%), 이미지 영역 세로 정렬
