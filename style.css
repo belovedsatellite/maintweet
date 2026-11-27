@@ -537,3 +537,22 @@ details.oitem[open]>summary{border-bottom:1px solid var(--e-line)}
 .sum-ic.k-tape::before{inset:14px 5px;background:#f6b7c6;transform:rotate(-8deg)}
 .sum-tx{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:13.5px;color:var(--e-sub)}
 @media (prefers-reduced-motion:reduce){details.oitem>summary::after{transition:none}}
+
+/* 접는 그룹 (테마 탭) */
+details.fold>summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:14px;font-weight:800}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary em{font-style:normal;font-weight:700;font-size:12.5px;color:var(--e-acc);background:var(--e-acc-soft);padding:2px 9px;border-radius:999px}
+details.fold>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--e-sub);border-bottom:2px solid var(--e-sub);transform:rotate(45deg);margin:0 4px 4px auto}
+details.fold[open]>summary::after{transform:rotate(-135deg);margin-bottom:-4px}
+details.fold[open]>summary{margin-bottom:6px}
+details.sub{border-top:1px solid var(--e-line);padding-top:10px}
+details.sub>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--e-sub)}
+details.sub[open]>summary{margin-bottom:8px}
+
+/* 끌어서 순서 바꾸기 */
+.grip{flex:none;display:grid;place-items:center;width:24px;height:38px;margin-left:-4px;border-radius:6px;color:var(--e-sub);font-size:16px;cursor:grab;touch-action:none;user-select:none}
+.grip:hover{background:var(--e-field);color:var(--e-ink)}
+.grip:focus-visible{outline:2px solid var(--e-acc)}
+.sorting{cursor:grabbing}
+.sorting .grip{cursor:grabbing}
+details.oitem.dragging{opacity:.85;box-shadow:0 10px 24px rgba(0,0,0,.18);border-color:var(--e-acc);position:relative;z-index:2;background:var(--e-pn)}

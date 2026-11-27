@@ -42,7 +42,6 @@
       <button data-tab="fav">이미지</button>
       <button data-tab="deco">꾸미기</button>
       <button data-tab="theme">테마</button>
-      <button data-tab="layout">배치</button>
       <button data-tab="file">저장</button>
     </nav>
 
@@ -164,11 +163,17 @@
 
     <!-- 테마 -->
     <section class="pane" data-pane="theme">
-      <div class="group"><h4>테마</h4><div id="themeGrid" class="themes"></div></div>
-      <div class="group"><h4>색 조합</h4><div id="palGrid" class="pals"></div></div>
-      <details class="group">
-        <summary>색 직접 지정</summary>
-        <div id="colorEd" class="colors"></div>
+      <details class="group fold" open>
+        <summary><span>테마</span><em id="themeCur"></em></summary>
+        <div id="themeGrid" class="themes"></div>
+      </details>
+      <details class="group fold" open>
+        <summary><span>색 조합</span><em id="palCur"></em></summary>
+        <div id="palGrid" class="pals"></div>
+        <details class="sub">
+          <summary>색 직접 지정</summary>
+          <div id="colorEd" class="colors"></div>
+        </details>
       </details>
       <div class="group">
         <h4>글꼴과 모양</h4>
@@ -176,7 +181,6 @@
           <label class="field"><span class="lb">본문 글꼴</span><select data-bind="font" id="fontSel"></select></label>
           <label class="field"><span class="lb">제목·닉네임 글꼴</span><select data-bind="tfont" id="tfontSel"></select></label>
         </div>
-        <label class="chk"><input type="checkbox" data-bind="decoOn"> 우주 테마의 위성·우주선·우주비행사 표시</label>
         <label class="rng">글자 크기 <span data-v="fs"></span>%<input type="range" min="80" max="140" step="5" data-bind="fs"></label>
         <div class="two">
           <label class="field"><span class="lb">키워드 모양</span>
@@ -184,11 +188,8 @@
           </label>
           <label class="rng">모서리 둥글기 <span data-v="radius"></span>px<input type="range" min="0" max="40" step="2" data-bind="radius"></label>
         </div>
+        <label class="chk" id="decoRow"><input type="checkbox" data-bind="decoOn"> 위성·우주선·우주비행사 표시</label>
       </div>
-    </section>
-
-    <!-- 레이아웃 -->
-    <section class="pane" data-pane="layout">
       <div class="group">
         <h4>배치</h4>
         <div class="seg" id="laySeg">

@@ -315,6 +315,7 @@ const fontOpts = cur => `<option value="body"${cur === 'body' ? ' selected' : ''
   Object.keys(FONTS).map(f => `<option value="${f}"${cur === f ? ' selected' : ''}>${FONTS[f][0]}</option>`).join('');
 function rng(label, k, min, max, v, step = 1){ return `<label class="rng">${label} <span>${v}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-k="${k}"></label>`; }
 const openObjs = new Set();
+const GRIP = '<span class="grip" tabindex="0" role="button" aria-label="끌어서 순서 바꾸기 (방향키로도 이동)" title="끌어서 순서 바꾸기">⠿</span>';
 const preview = o => (o.text || '').replace(/\s+/g, ' ').trim().slice(0, 28) || '(빈 텍스트)';
 function renderObjList(){
   const L = $('#objList');
@@ -322,10 +323,10 @@ function renderObjList(){
   if (!S.objs.length) { L.innerHTML = '<p class="empty">아직 스티커나 텍스트가 없어요.</p>'; return; }
   const n = S.objs.length;
   L.innerHTML = S.objs.map((o, i) => ({o, i})).reverse().map(({o, i}) => {
-    const btns = `<div class="btns"><button data-a="front" ${i < n - 1 ? '' : 'disabled'}>앞으로</button><button data-a="back" ${i ? '' : 'disabled'}>뒤로</button><button data-a="dup">복제</button>${o.type === 'sticker' ? '<button data-a="flip">좌우 반전</button>' : ''}<button data-a="del" class="danger">삭제</button></div>`;
+    const btns = `<div class="btns"><button data-a="dup">복제</button>${o.type === 'sticker' ? '<button data-a="flip">좌우 반전</button>' : ''}<button data-a="del" class="danger">삭제</button></div>`;
     const head = o.type === 'sticker'
-      ? `<summary><img class="sum-th" src="${o.url}" alt=""><span class="badge">스티커</span><span class="sum-tx">${Math.round(o.w)}px</span></summary>`
-      : `<summary><span class="sum-ic k-${o.kind}"></span><span class="badge">${KIND_NAMES[o.kind]}</span><span class="sum-tx">${esc(preview(o))}</span></summary>`;
+      ? `<summary>${GRIP}<img class="sum-th" src="${o.url}" alt=""><span class="badge">스티커</span><span class="sum-tx">${Math.round(o.w)}px</span></summary>`
+      : `<summary>${GRIP}<span class="sum-ic k-${o.kind}"></span><span class="badge">${KIND_NAMES[o.kind]}</span><span class="sum-tx">${esc(preview(o))}</span></summary>`;
     const wrap = body => `<details class="item oitem${o.id === sel ? ' sel' : ''}" data-id="${o.id}"${openObjs.has(o.id) ? ' open' : ''}>${head}<div class="ctl obody">${body}</div></details>`;
     if (o.type === 'sticker') return wrap(`${rng('크기', 'w', 30, 1600, Math.round(o.w))}<div class="two">${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}</div>${btns}`);
     const bub = o.kind === 'bubble' || o.kind === 'line';
@@ -517,7 +518,7 @@ function renderFavList(){
   $('#favTools').hidden = !S.favs.length;
   if (!S.favs.length) { L.innerHTML = '<p class="empty">아직 이미지가 없어요. 좋아하는 캐릭터·페어 이미지를 넣어 보세요.</p>'; return; }
   L.innerHTML = S.favs.map((f, i) => `<details class="item oitem" data-id="${f.id}"${openFavs.has(f.id) ? ' open' : ''}>
-    <summary><img class="sum-th cover" src="${f.url}" alt="" style="object-position:${bgPos(f)}"><span class="sum-no">${i + 1}</span><span class="sum-tx">${esc([f.genre, f.name].filter(Boolean).join(' · ') || '캡션 없음')}</span></summary>
+    <summary><span class="grip" tabindex="0" role="button" aria-label="끌어서 순서 바꾸기 (방향키로도 이동)" title="끌어서 순서 바꾸기">⠿</span><img class="sum-th cover" src="${f.url}" alt="" style="object-position:${bgPos(f)}"><span class="sum-no">${i + 1}</span><span class="sum-tx">${esc([f.genre, f.name].filter(Boolean).join(' · ') || '캡션 없음')}</span></summary>
     <div class="ctl obody">
       <input type="text" data-k="genre" value="${esc(f.genre)}" placeholder="장르명">
       <input type="text" data-k="name" value="${esc(f.name)}" placeholder="캐릭터명 / 페어명">
@@ -525,7 +526,7 @@ function renderFavList(){
       <select data-k="frame" aria-label="액자"><option value="auto">액자: 기본 설정 따름</option>${Object.entries(FRAMES).map(([k, v]) => `<option value="${k}"${f.frame === k ? ' selected' : ''}>액자: ${v}</option>`).join('')}</select>
       <div class="two"><label class="rng">가로 위치<input type="range" min="0" max="100" value="${f.px ?? 50}" data-k="px"></label><label class="rng">세로 위치<input type="range" min="0" max="100" value="${f.pos}" data-k="pos"></label></div>
       <label class="rng">확대 <span>${f.zoom || 100}</span>%<input type="range" min="100" max="400" step="5" value="${f.zoom || 100}" data-k="zoom"></label>
-      <div class="btns"><button data-a="up" ${i ? '' : 'disabled'}>앞으로</button><button data-a="down" ${i < S.favs.length - 1 ? '' : 'disabled'}>뒤로</button><button data-a="reset">위치 초기화</button><button data-a="del" class="danger">삭제</button></div>
+      <div class="btns"><button data-a="reset">위치 초기화</button><button data-a="del" class="danger">삭제</button></div>
     </div></details>`).join('');
 }
 $('#favList').addEventListener('toggle', e => {
@@ -649,6 +650,57 @@ $('#cb').addEventListener('wheel', e => {
   clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { t.after(); save(); }, 300);
 }, {passive:false});
 
+/* ───────── 목록 끌어서 순서 바꾸기 (이미지·꾸미기 공통) ───────── */
+function sortable(list, getArr, setArr, reversed, after){
+  let d = null;
+  const ids = () => [...list.querySelectorAll(':scope > .oitem')].map(el => el.dataset.id);
+  const apply = order => {
+    if (reversed) order.reverse();
+    const arr = getArr(), byId = new Map(arr.map(x => [x.id, x]));
+    setArr(order.map(id => byId.get(id)).filter(Boolean));
+    after(); save();
+  };
+  list.addEventListener('click', e => { if (e.target.closest('.grip')) e.preventDefault(); });
+  list.addEventListener('pointerdown', e => {
+    const g = e.target.closest('.grip'); if (!g) return;
+    e.preventDefault();
+    const item = g.closest('.oitem');
+    d = {item, before:ids().join()};
+    item.classList.add('dragging'); list.classList.add('sorting');
+    g.setPointerCapture(e.pointerId);
+  });
+  window.addEventListener('pointermove', e => {
+    if (!d) return;
+    const y = e.clientY;
+    const others = [...list.querySelectorAll(':scope > .oitem:not(.dragging)')];
+    const next = others.find(el => { const r = el.getBoundingClientRect(); return y < r.top + r.height / 2; });
+    if (next) { if (next !== d.item.nextElementSibling) list.insertBefore(d.item, next); }
+    else if (d.item !== list.lastElementChild) list.appendChild(d.item);
+    // 목록 끝에 가까우면 패널 자동 스크롤
+    const p = $('.panel'), pr = p.getBoundingClientRect();
+    if (y < pr.top + 70) p.scrollTop -= 12; else if (y > pr.bottom - 50) p.scrollTop += 12;
+  });
+  const end = () => {
+    if (!d) return;
+    d.item.classList.remove('dragging'); list.classList.remove('sorting');
+    const order = ids(), changed = order.join() !== d.before; d = null;
+    if (changed) apply(order);
+  };
+  window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
+  // 키보드: 손잡이에 초점을 두고 ↑↓
+  list.addEventListener('keydown', e => {
+    const g = e.target.closest('.grip'); if (!g || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    e.preventDefault();
+    const item = g.closest('.oitem'), id = item.dataset.id, order = ids(), i = order.indexOf(id), j = e.key === 'ArrowUp' ? i - 1 : i + 1;
+    if (j < 0 || j >= order.length) return;
+    [order[i], order[j]] = [order[j], order[i]];
+    apply(order);
+    list.querySelector(`.oitem[data-id="${id}"] .grip`)?.focus();
+  });
+}
+sortable($('#favList'), () => S.favs, v => { S.favs = v; }, false, () => { renderFavList(); renderCard(); });
+sortable($('#objList'), () => S.objs, v => { S.objs = v; }, true, () => { renderObjList(); renderObjs(); });
+
 /* ───────── 편집기: 테마 ───────── */
 function renderThemeEd(){
   $('#themeGrid').innerHTML = Object.entries(THEMES).map(([id, t]) =>
@@ -656,6 +708,9 @@ function renderThemeEd(){
   $('#palGrid').innerHTML = T().pals.map(([n, c], i) =>
     `<button type="button" class="pal${S.pal === i ? ' on' : ''}" data-p="${i}"><i><span style="background:${c.bg}"></span><span style="background:${c.surface}"></span><span style="background:${c.accent}"></span><span style="background:${c.deco}"></span></i>${n}</button>`).join('') +
     (S.pal === -1 ? `<span class="pal on" style="cursor:default"><i><span style="background:${S.c.bg}"></span><span style="background:${S.c.accent}"></span></i>직접 지정</span>` : '');
+  $('#themeCur').textContent = T().name;
+  $('#palCur').textContent = S.pal === -1 ? '직접 지정' : T().pals[S.pal][0];
+  $('#decoRow').hidden = S.theme !== 'space';
   $('#colorEd').innerHTML = COLOR_KEYS.map(([k, n]) => `<label><input type="color" data-color="${k}" value="${S.c[k]}">${n}</label>`).join('');
   $('#frameSel').innerHTML = Object.entries(FRAMES).map(([k, v]) => `<option value="${k}">${v}</option>`).join('');
   $('#frameSel').value = S.frameDef;
@@ -676,7 +731,7 @@ $('#palGrid').addEventListener('click', e => {
 $('#colorEd').addEventListener('input', e => {
   const k = e.target.dataset.color; if (!k) return;
   S.c[k] = e.target.value;
-  if (S.pal !== -1) { S.pal = -1; $$('#palGrid .pal').forEach(p => p.classList.remove('on')); }
+  if (S.pal !== -1) { S.pal = -1; $$('#palGrid .pal').forEach(p => p.classList.remove('on')); $('#palCur').textContent = '직접 지정'; }
   update();
 });
 $('#colorEd').addEventListener('change', () => renderThemeEd());
