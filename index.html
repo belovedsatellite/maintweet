@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>소개표 메이커</title>
+<meta name="description" content="트위터(X) 메인트윗용 가로형 소개표 이미지를 만들어 PNG/JPG로 저장하는 도구">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=IBM+Plex+Sans+KR:wght@400;700&family=Gowun+Dodum&family=Nanum+Myeongjo:wght@400;700;800&family=Gowun+Batang:wght@400;700&family=Hahmlet:wght@400;700&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Do+Hyeon&family=Jua&family=Black+Han+Sans&family=Outfit:wght@400;700;800&family=Bebas+Neue&family=Oswald:wght@500;700&family=Cinzel:wght@600;700&family=Playfair+Display:wght@700&family=DM+Serif+Display&family=Special+Elite&family=Courier+Prime:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>소개표 메이커</h1>
+  <div class="acts">
+    <select id="fmt" aria-label="파일 형식"><option value="png">PNG</option><option value="jpg">JPG</option></select>
+    <select id="pr" aria-label="해상도"><option value="1">기본 해상도</option><option value="2" selected>고화질 2배</option></select>
+    <button class="btn pri" id="dl">이미지 저장</button>
+  </div>
+</header>
+
+<main class="app">
+  <aside class="panel">
+    <nav class="tabs" role="tablist">
+      <button class="on" data-tab="info">프로필</button>
+      <button data-tab="tags">성향</button>
+      <button data-tab="text">소개</button>
+      <button data-tab="fav">이미지</button>
+      <button data-tab="deco">꾸미기</button>
+      <button data-tab="theme">테마</button>
+      <button data-tab="layout">레이아웃</button>
+      <button data-tab="file">저장</button>
+    </nav>
+
+    <!-- 프로필 -->
+    <section class="pane on" data-pane="info">
+      <div class="group">
+        <h4>프로필 사진</h4>
+        <div class="imgrow">
+          <div class="thumb round" id="profileTh"></div>
+          <label class="btn">이미지 선택<input type="file" accept="image/*" id="profileIn" hidden></label>
+          <button class="btn ghost" id="profileDel">삭제</button>
+        </div>
+        <div class="two">
+          <label class="field"><span class="lb">모양</span>
+            <select data-bind="pfShape"><option value="circle">원형</option><option value="round">둥근 사각형</option><option value="square">사각형</option></select>
+          </label>
+          <label class="rng">크기 <span data-v="pfSize"></span>px<input type="range" min="90" max="260" step="5" data-bind="pfSize"></label>
+        </div>
+        <p class="hint">다이어리·디텍티브 보드 테마에서는 폴라로이드 모양으로 바뀌어요.</p>
+      </div>
+      <div class="group">
+        <h4>헤더 이미지 <em>선택</em></h4>
+        <div class="imgrow">
+          <div class="thumb wide" id="headerTh"></div>
+          <label class="btn">이미지 선택<input type="file" accept="image/*" id="headerIn" hidden></label>
+          <button class="btn ghost" id="headerDel">삭제</button>
+        </div>
+        <label class="chk"><input type="checkbox" data-bind="showHeader"> 헤더 표시</label>
+        <label class="rng">높이 <span data-v="headerH"></span>px<input type="range" min="120" max="480" step="10" data-bind="headerH"></label>
+        <label class="rng">세로 위치 <span data-v="headerPos"></span>%<input type="range" min="0" max="100" data-bind="headerPos"></label>
+      </div>
+      <div class="group">
+        <h4>계정</h4>
+        <label class="field"><span class="lb">닉네임</span><input type="text" data-bind="nick" maxlength="60"></label>
+        <label class="field"><span class="lb">아이디</span><input type="text" data-bind="uid" maxlength="60" placeholder="@your_id"></label>
+        <label class="field"><span class="lb">이름 정렬</span>
+          <select data-bind="align"><option value="left">왼쪽 (프로필 옆)</option><option value="center">가운데 (프로필 아래)</option></select>
+        </label>
+      </div>
+    </section>
+
+    <!-- 성향 -->
+    <section class="pane" data-pane="tags">
+      <p class="hint">키워드를 눌러 켜고 끌 수 있어요. 켜진 키워드만 소개표에 들어가요. 쉼표로 여러 개를 한 번에 추가할 수 있어요.</p>
+      <label class="field"><span class="lb">배치</span>
+        <select data-bind="tagLayout"><option value="list">한 줄씩 (제목 옆에 키워드)</option><option value="row">가로로 나란히</option><option value="stack">세로로 쌓기</option></select>
+      </label>
+      <div id="tagEd"></div>
+    </section>
+
+    <!-- 소개 -->
+    <section class="pane" data-pane="text">
+      <p class="hint">처음에 들어 있는 글은 예시예요. 비워 둔 칸은 소개표에서 빠져요.</p>
+      <div class="group"><input type="text" class="ttl" data-title="about" aria-label="ABOUT 제목"><textarea data-bind="about" rows="5"></textarea></div>
+      <div class="group"><input type="text" class="ttl" data-title="caution" aria-label="CAUTION 제목"><textarea data-bind="caution" rows="4"></textarea></div>
+      <div class="group"><input type="text" class="ttl" data-title="ng" aria-label="NG 제목"><textarea data-bind="ng" rows="4"></textarea></div>
+      <label class="chk"><input type="checkbox" data-bind="pairNG"> CAUTION과 NG를 나란히 배치</label>
+    </section>
+
+    <!-- 이미지 -->
+    <section class="pane" data-pane="fav">
+      <div class="group">
+        <input type="text" class="ttl" data-title="fav" aria-label="이미지 영역 제목" placeholder="제목 (비우면 숨김)">
+        <label class="rng">한 줄에 <span data-v="favCols"></span>개<input type="range" min="1" max="6" data-bind="favCols"></label>
+        <div class="two">
+          <label class="field"><span class="lb">이미지 비율</span>
+            <select data-bind="favRatio">
+              <option value="1/1">정사각형 1:1</option><option value="3/4">세로 3:4</option><option value="2/3">세로 2:3</option>
+              <option value="4/3">가로 4:3</option><option value="16/9">가로 16:9</option>
+            </select>
+          </label>
+          <label class="field"><span class="lb">캡션</span>
+            <select data-bind="cap"><option value="below">이미지 아래</option><option value="over">이미지 위에 겹치기</option><option value="none">표시 안 함</option></select>
+          </label>
+        </div>
+        <label class="chk"><input type="checkbox" data-bind="favCenter"> 마지막 줄 가운데 정렬</label>
+        <label class="field"><span class="lb">기본 액자</span><select data-bind="frameDef" id="frameSel"></select></label>
+        <p class="hint">이미지마다 아래 목록에서 액자를 따로 고를 수도 있어요. 미술관 테마의 기본 액자는 금색 클래식이에요.</p>
+      </div>
+      <label class="btn wide pri-soft">이미지 추가 (여러 장 선택 가능)<input type="file" accept="image/*" multiple id="favIn" hidden></label>
+      <div id="favList" class="list"></div>
+    </section>
+
+    <!-- 꾸미기 -->
+    <section class="pane" data-pane="deco">
+      <div class="group">
+        <h4>텍스트 추가</h4>
+        <div class="kinds" id="addText">
+          <button data-kind="plain"><b>Aa</b>텍스트</button>
+          <button data-kind="bubble"><b class="k-ic bub"></b>말풍선</button>
+          <button data-kind="line"><b class="k-ic lin"></b>외곽선 말풍선</button>
+          <button data-kind="quote"><b>“</b>인용구</button>
+          <button data-kind="memo"><b class="k-ic memo"></b>메모지</button>
+          <button data-kind="tape"><b class="k-ic tape"></b>테이프</button>
+        </div>
+      </div>
+      <label class="btn wide pri-soft">스티커 이미지 추가<input type="file" accept="image/*" multiple id="stkIn" hidden></label>
+      <p class="hint">미리보기에서 끌어 옮기고, 파란 점을 끌어 크기(텍스트는 너비)를 바꿔요. 선택한 상태에서 방향키로 1px(Shift는 10px)씩 옮기고 Delete로 지울 수 있어요.</p>
+      <div id="objList" class="list"></div>
+    </section>
+
+    <!-- 테마 -->
+    <section class="pane" data-pane="theme">
+      <div class="group"><h4>테마</h4><div id="themeGrid" class="themes"></div></div>
+      <div class="group"><h4>색 조합</h4><div id="palGrid" class="pals"></div></div>
+      <details class="group">
+        <summary>색 직접 지정</summary>
+        <div id="colorEd" class="colors"></div>
+      </details>
+      <div class="group">
+        <h4>글꼴과 모양</h4>
+        <div class="two">
+          <label class="field"><span class="lb">본문 글꼴</span><select data-bind="font" id="fontSel"></select></label>
+          <label class="field"><span class="lb">제목·닉네임 글꼴</span><select data-bind="tfont" id="tfontSel"></select></label>
+        </div>
+        <label class="chk"><input type="checkbox" data-bind="decoOn"> 우주 테마의 위성·우주선·우주비행사 표시</label>
+        <label class="rng">글자 크기 <span data-v="fs"></span>%<input type="range" min="80" max="140" step="5" data-bind="fs"></label>
+        <div class="two">
+          <label class="field"><span class="lb">키워드 모양</span>
+            <select data-bind="chipStyle"><option value="theme">테마 기본</option><option value="fill">채운 알약</option><option value="outline">테두리 알약</option><option value="square">네모 태그</option><option value="text">텍스트 / 구분</option></select>
+          </label>
+          <label class="rng">모서리 둥글기 <span data-v="radius"></span>px<input type="range" min="0" max="40" step="2" data-bind="radius"></label>
+        </div>
+      </div>
+    </section>
+
+    <!-- 레이아웃 -->
+    <section class="pane" data-pane="layout">
+      <div class="group">
+        <h4>배치</h4>
+        <div class="seg" id="laySeg">
+          <button data-lay="left"><i class="li l"></i>정보 · 이미지</button>
+          <button data-lay="right"><i class="li r"></i>이미지 · 정보</button>
+          <button data-lay="vert"><i class="li v"></i>세로형</button>
+        </div>
+        <label class="rng">정보 영역 너비 <span data-v="split"></span>%<input type="range" min="28" max="62" data-bind="split"></label>
+        <label class="field"><span class="lb">이미지 영역 세로 정렬</span>
+          <select data-bind="galign"><option value="flex-start">위쪽</option><option value="center">가운데</option><option value="flex-end">아래쪽</option></select>
+        </label>
+      </div>
+      <div class="group">
+        <h4>크기</h4>
+        <div class="two">
+          <label class="field"><span class="lb">가로 폭</span>
+            <select data-bind="width" data-num><option value="1200">1200px</option><option value="1600">1600px</option><option value="1920">1920px</option></select>
+          </label>
+          <label class="field"><span class="lb">기본 비율</span>
+            <select data-bind="ratio">
+              <option value="2:1">2:1 와이드</option><option value="16:9">16:9</option><option value="3:2">3:2</option><option value="4:3">4:3</option>
+              <option value="1:1">1:1</option><option value="4:5">4:5 세로</option><option value="3:4">3:4 세로</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" id="sizeInfo"></p>
+      </div>
+    </section>
+
+    <!-- 저장 -->
+    <section class="pane" data-pane="file">
+      <p class="hint">작업 내용은 이 브라우저에 자동 저장돼요. 이미지가 많아 자동 저장 용량을 넘으면 아래 프로젝트 파일로 저장해 두세요.</p>
+      <p class="warn" id="saveWarn" hidden>자동 저장 용량을 넘었어요. 프로젝트 파일로 저장해 두지 않으면 새로고침 때 이미지가 사라질 수 있어요.</p>
+      <button class="btn wide" id="projSave">프로젝트 파일 저장 (.json)</button>
+      <label class="btn wide ghost">프로젝트 파일 불러오기<input type="file" accept=".json,application/json" id="projLoad" hidden></label>
+      <button class="btn wide danger" id="reset">처음부터 다시 만들기</button>
+    </section>
+  </aside>
+
+  <section class="stage" id="stage">
+    <div id="wrap"><div id="scaler"><div id="card"><div id="cb"></div><div id="layer"></div></div></div></div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
