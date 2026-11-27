@@ -29,12 +29,6 @@ const THEMES = {
     ['네온',  P('#0b1016','#04070a','#e6f2f5','#7f98a3','#3fe0cf','#ff8a4c','#0b1016','#1d2a33','#000000')],
     ['세피아', P('#1b150f','#0d0a07','#f0e2c6','#a7926f','#e3b672','#f0e2c6','#1b150f','#3b2f22','#0a0806')],
   ]},
-  stage:{name:'스테이지', desc:'벨벳 커튼과 조명, 금테 무대', font:'Gowun Batang', tfont:'Cinzel', ktf:'Gowun Batang', pals:[
-    ['레드 벨벳', P('#1a0b0e','#2a1214','#f6ead2','#c9a98a','#d8b45f','#d8b45f','#2a1206','#5a2a2f','#8c1424')],
-    ['미드나잇',  P('#0b0f22','#141a38','#eef0ff','#a3a9cf','#e2c46e','#e2c46e','#141a38','#2a3160','#1f3a8a')],
-    ['에메랄드',  P('#07150f','#0f2219','#eef6ee','#9bb8a6','#e0c16a','#e0c16a','#0f2219','#244635','#145c3c')],
-    ['로즈',     P('#1c0a14','#2a1020','#fbe9f1','#c79ab0','#f0c27a','#f0c27a','#2a1020','#4d2338','#a3335f')],
-  ]},
   board:{name:'디텍티브 보드', desc:'코르크 보드에 핀과 붉은 실', font:'IBM Plex Sans KR', tfont:'Special Elite', ktf:'', pals:[
     ['코르크',    P('#b9895b','#fbf8f0','#2b2622','#7d736a','#d1362f','#2b2622','#fbf8f0','#e3dccd','#5b3b23')],
     ['다크 펠트',  P('#2c3a36','#f3efe4','#26221e','#7a7166','#e6c34a','#26221e','#f3efe4','#ddd5c4','#1a1614')],
@@ -85,8 +79,8 @@ const CAP_SCALE = [1.15, 1, .92, .84, .76, .7];
 const KIND_NAMES = {plain:'텍스트', bubble:'말풍선', line:'외곽선 말풍선', quote:'인용구', memo:'메모지', tape:'테이프'};
 const KIND_DEF = {
   plain: {w:440, size:40, rot:0,  align:'left',   bold:true,  text:'텍스트를 입력하세요'},
-  bubble:{w:360, size:28, rot:0,  align:'left',   bold:false, text:'말풍선 대사를 적어 주세요!', tail:'bl'},
-  line:  {w:360, size:28, rot:0,  align:'left',   bold:false, text:'외곽선 말풍선이에요', tail:'br'},
+  bubble:{w:360, size:28, rot:0,  align:'left',   bold:false, text:'말풍선 대사를 적어 주세요!', tail:'bl', tl:80, tw:90, tip:-20, tx:15},
+  line:  {w:360, size:28, rot:0,  align:'left',   bold:false, text:'외곽선 말풍선이에요', tail:'br', tl:80, tw:90, tip:20, tx:15},
   quote: {w:520, size:30, rot:0,  align:'left',   bold:false, text:'좋아하는 대사나 문장을 넣어 보세요.', by:'출처'},
   memo:  {w:280, size:24, rot:-3, align:'left',   bold:false, text:'메모지에 한마디'},
   tape:  {w:300, size:24, rot:-4, align:'center', bold:true,  text:'LABEL'},
@@ -109,7 +103,7 @@ function defaults(){
     caution:'타임라인이 시끄러울 수 있어요.\n스포일러는 별도 표기 후 올려요.',
     ng:'무단 전재·AI 학습 금지\n언팔 블락 자유',
     pairNG:true,
-    favs:[], favCols:2, favRatio:'3/4', cap:'below', favCenter:true, frameDef:'theme', decoOn:true,
+    favs:[], favCols:2, favRatio:'3/4', cap:'below', favCenter:true, frameDef:'theme', decoOn:true, srcPos:'right',
     objs:[],
     theme:'simple', pal:0, c:{...THEMES.simple.pals[0][1]},
     font:'', tfont:'', fs:100, chipStyle:'theme', radius:18,
@@ -187,18 +181,33 @@ function tagHTML(k){
 const txtHTML = k => S[k].trim() ? sec(k, `<p class="txt">${esc(S[k].replace(/\s+$/, ''))}</p>`, 'tsec') : '';
 function capHTML(f){
   if (S.cap === 'none' || !(f.genre || f.name || f.source)) return '';
-  return `<figcaption>${f.genre ? `<span class="g">${esc(f.genre)}</span>` : ''}${f.name ? `<b>${esc(f.name)}</b>` : ''}${f.source ? `<small>${esc(f.source)}</small>` : ''}</figcaption>`;
+  const main = f.genre || f.name ? `<span class="cl">${f.genre ? `<span class="g">${esc(f.genre)}</span>` : ''}${f.name ? `<b>${esc(f.name)}</b>` : ''}</span>` : '';
+  return `<figcaption class="src-${S.srcPos}">${main}${f.source ? `<small>${esc(f.source)}</small>` : ''}</figcaption>`;
 }
 function frameOf(f){
   let fr = f.frame && f.frame !== 'auto' ? f.frame : S.frameDef;
   if (fr === 'theme') fr = S.theme === 'museum' ? 'gold' : 'theme';
   return FRAMES[fr] ? fr : 'theme';
 }
+const FRAME_W = [30, 26, 22, 18, 16, 14];
+function boxRatio(f){   // 이미지 칸의 세로/가로
+  const fr = frameOf(f);
+  if (fr === 'round') return 1;
+  if (fr === 'oval') return 4 / 3;
+  const [w, h] = S.favRatio.split('/').map(Number);
+  return h / w;
+}
+function bgSize(f){
+  const z = f.zoom || 100;
+  if (!f.ar) return z === 100 ? 'cover' : `${z}% auto`;
+  return f.ar >= boxRatio(f) ? `${z}% auto` : `auto ${z}%`;
+}
+const bgPos = f => `${f.px ?? 50}% ${f.pos ?? 50}%`;
 function galHTML(){
   const t = S.titles.fav.trim();
   if (!S.favs.length) return `<div class="gal">${t ? `<h3 class="sec-t gal-t ed">${esc(t)}</h3>` : ''}<div class="gal-empty ed">이미지 영역<br><small>이미지 탭에서 추가하거나, 꾸미기 탭에서 스티커·텍스트를 자유롭게 올려 보세요.<br>이 안내는 저장한 이미지에 나오지 않아요.</small></div></div>`;
-  const items = S.favs.map(f => `<figure class="fv fr-${frameOf(f)}" data-id="${f.id}"><div class="frm"><div class="im" style="background-image:url(${f.url});background-position:50% ${f.pos}%;aspect-ratio:${S.favRatio}">${S.cap === 'over' ? capHTML(f) : ''}</div></div>${S.cap === 'below' ? capHTML(f) : ''}</figure>`).join('');
-  return `<div class="gal cap-${S.cap}">${t ? `<h3 class="gal-t">${esc(t)}</h3>` : ''}<div class="strip"><div class="grid${S.favCenter ? ' ctr' : ''}" style="--cols:${S.favCols};--cs:${CAP_SCALE[S.favCols - 1]}">${items}</div></div></div>`;
+  const items = S.favs.map(f => `<figure class="fv fr-${frameOf(f)}" data-id="${f.id}"><div class="frm"><div class="im" style="background-image:url(${f.url});background-size:${bgSize(f)};background-position:${bgPos(f)};aspect-ratio:${S.favRatio}">${S.cap === 'over' ? capHTML(f) : ''}</div></div>${S.cap === 'below' ? capHTML(f) : ''}</figure>`).join('');
+  return `<div class="gal cap-${S.cap}">${t ? `<h3 class="gal-t">${esc(t)}</h3>` : ''}<div class="strip"><div class="grid${S.favCenter ? ' ctr' : ''}" style="--cols:${S.favCols};--cs:${CAP_SCALE[S.favCols - 1]};--fw:${FRAME_W[S.favCols - 1]}px">${items}</div></div></div>`;
 }
 function renderCard(){
   const card = $('#card'), st = card.style;
@@ -279,8 +288,22 @@ function objHTML(o){
   if (o.type === 'sticker')
     return `<div class="obj stk${s}" data-id="${o.id}" style="${base}"><img src="${o.url}" alt="" draggable="false" style="transform:scaleX(${o.flip ? -1 : 1});opacity:${o.op / 100}"><i class="h"></i></div>`;
   const st = `${base};font-size:${o.size}px;text-align:${o.align};font-family:${objFont(o).replace(/"/g, "'")};font-weight:${o.bold ? 700 : 400};opacity:${o.op / 100}${o.custom ? `;--cfg:${o.fg};--cbg:${o.bg}` : ''}`;
-  const tail = (o.kind === 'bubble' || o.kind === 'line') ? ` tail-${o.tail || 'bl'}` : '';
-  return `<div class="obj tx k-${o.kind}${tail}${o.custom ? ' custom' : ''}${s}" data-id="${o.id}" style="${st}"><div class="tb">${esc(o.text)}</div>${o.kind === 'quote' && o.by ? `<div class="by">— ${esc(o.by)}</div>` : ''}<i class="h"></i></div>`;
+  const bub = o.kind === 'bubble' || o.kind === 'line';
+  const tail = bub ? ` tail-${o.tail || 'bl'}` : '';
+  const tv = '';
+  return `<div class="obj tx k-${o.kind}${tail}${o.custom ? ' custom' : ''}${s}" data-id="${o.id}" style="${st}${tv}">${bub ? tailSVG(o) : ''}<div class="tb">${esc(o.text)}</div>${o.kind === 'quote' && o.by ? `<div class="by">— ${esc(o.by)}</div>` : ''}<i class="h"></i></div>`;
+}
+function tailSVG(o){
+  const pos = o.tail || 'bl'; if (pos === 'none') return '';
+  const fs = o.size, line = o.kind === 'line', b = line ? .12 * fs : 0;
+  const tl = (o.tl ?? 80) / 100 * fs, tw = (o.tw ?? 90) / 100 * fs;
+  const H = tl + b + 1, tip = tw / 2 + Math.tan((o.tip ?? 0) * Math.PI / 180) * tl;
+  const top = pos[0] === 't', side = pos[1], tx = o.tx ?? 15;
+  const left = side === 'c' ? `calc(50% - ${tw / 2}px)` : side === 'l' ? `calc(${tx}% - ${tw / 2}px)` : `calc(${100 - tx}% - ${tw / 2}px)`;
+  const y0 = top ? H : 0, y1 = top ? 0 : H;
+  const pts = `0,${y0} ${tw},${y0} ${tip},${y1}`;
+  const stroke = line ? `<path d="M0 ${y0} L${tip} ${y1} L${tw} ${y0}" fill="none" stroke="var(--ofg)" stroke-width="${2 * b}" stroke-linejoin="round"/>` : '';
+  return `<svg class="tail" width="${tw}" height="${H}" viewBox="0 0 ${tw} ${H}" style="left:${left};${top ? `bottom:calc(100% - 1px)` : `top:calc(100% - 1px)`}">${stroke}<polygon points="${pts}" fill="var(--obg)"/></svg>`;
 }
 function renderObjs(){ $('#layer').innerHTML = S.objs.map(objHTML).join(''); }
 
@@ -308,6 +331,8 @@ function renderObjList(){
         <select data-k="font">${fontOpts(o.font)}</select>
         ${bub ? `<select data-k="align">${[['left','왼쪽 정렬'],['center','가운데 정렬'],['right','오른쪽 정렬']].map(([k, v]) => `<option value="${k}"${k === o.align ? ' selected' : ''}>${v}</option>`).join('')}</select>` : '<span></span>'}
       </div>
+      ${bub && o.tail !== 'none' ? `<div class="two">${rng('꼬리 길이', 'tl', 20, 400, o.tl ?? 80)}${rng('꼬리 너비', 'tw', 20, 300, o.tw ?? 90)}</div>
+      <div class="two">${rng('꼬리 기울기', 'tip', -60, 60, o.tip ?? 0)}${o.tail === 'bc' || o.tail === 'tc' ? '<span></span>' : rng('꼬리 위치', 'tx', 0, 80, o.tx ?? 15)}</div>` : ''}
       <div class="two">${rng('글자 크기', 'size', 12, 140, o.size)}${rng('너비', 'w', 60, 1800, Math.round(o.w))}</div>
       <div class="two">${rng('회전', 'rot', -180, 180, o.rot)}${rng('투명도', 'op', 10, 100, o.op)}</div>
       <div class="clr"><label class="chk"><input type="checkbox" data-k="bold"${o.bold ? ' checked' : ''}> 굵게</label>
@@ -361,7 +386,7 @@ $('#objList').addEventListener('input', e => {
   else o[k] = t.value;
   sel = o.id;
   renderObjs(); save();
-  if (k === 'kind' || k === 'custom') renderObjList();
+  if (k === 'kind' || k === 'custom' || k === 'tail') renderObjList();
 });
 $('#objList').addEventListener('click', e => {
   const it = e.target.closest('.item'); if (!it) return;
@@ -455,27 +480,30 @@ function renderFavList(){
   const L = $('#favList');
   if (!S.favs.length) { L.innerHTML = '<p class="empty">아직 이미지가 없어요. 좋아하는 캐릭터·페어 이미지를 넣어 보세요.</p>'; return; }
   L.innerHTML = S.favs.map((f, i) => `<div class="item" data-id="${f.id}">
-    <img class="th" src="${f.url}" alt="" style="object-position:50% ${f.pos}%">
+    <img class="th" src="${f.url}" alt="" style="object-position:${bgPos(f)}">
     <div class="ctl">
       <input type="text" data-k="genre" value="${esc(f.genre)}" placeholder="장르명">
       <input type="text" data-k="name" value="${esc(f.name)}" placeholder="캐릭터명 / 페어명">
       <input type="text" data-k="source" value="${esc(f.source)}" placeholder="출처 (예: @artist 님)">
       <select data-k="frame"><option value="auto">액자: 기본 설정 따름</option>${Object.entries(FRAMES).map(([k, v]) => `<option value="${k}"${f.frame === k ? ' selected' : ''}>액자: ${v}</option>`).join('')}</select>
-      <label class="rng">세로 위치<input type="range" min="0" max="100" value="${f.pos}" data-k="pos"></label>
-      <div class="btns"><button data-a="up" ${i ? '' : 'disabled'}>앞으로</button><button data-a="down" ${i < S.favs.length - 1 ? '' : 'disabled'}>뒤로</button><button data-a="del" class="danger">삭제</button></div>
+      <div class="two"><label class="rng">가로 위치<input type="range" min="0" max="100" value="${f.px ?? 50}" data-k="px"></label><label class="rng">세로 위치<input type="range" min="0" max="100" value="${f.pos}" data-k="pos"></label></div>
+      <label class="rng">확대 <span>${f.zoom || 100}</span>%<input type="range" min="100" max="400" step="5" value="${f.zoom || 100}" data-k="zoom"></label>
+      <div class="btns"><button data-a="up" ${i ? '' : 'disabled'}>앞으로</button><button data-a="down" ${i < S.favs.length - 1 ? '' : 'disabled'}>뒤로</button><button data-a="reset">위치 초기화</button><button data-a="del" class="danger">삭제</button></div>
     </div></div>`).join('');
 }
 $('#favList').addEventListener('input', e => {
   const t = e.target, it = t.closest('.item'); if (!it || !t.dataset.k) return;
   const f = S.favs.find(x => x.id === it.dataset.id);
   f[t.dataset.k] = t.type === 'range' ? +t.value : t.value;
-  if (t.dataset.k === 'pos') it.querySelector('.th').style.objectPosition = `50% ${f.pos}%`;
+  if (t.dataset.k === 'pos' || t.dataset.k === 'px') it.querySelector('.th').style.objectPosition = bgPos(f);
+  if (t.dataset.k === 'zoom') t.parentElement.querySelector('span').textContent = t.value;
   update();
 });
 $('#favList').addEventListener('click', e => {
   const b = e.target.closest('button[data-a]'); if (!b) return;
   const i = S.favs.findIndex(x => x.id === b.closest('.item').dataset.id);
   if (b.dataset.a === 'del') { dropURL(S.favs[i]); S.favs.splice(i, 1); }
+  else if (b.dataset.a === 'reset') Object.assign(S.favs[i], {px:50, pos:50, zoom:100});
   else { const j = b.dataset.a === 'up' ? i - 1 : i + 1; [S.favs[i], S.favs[j]] = [S.favs[j], S.favs[i]]; }
   renderFavList(); update();
 });
@@ -484,11 +512,52 @@ $('#favIn').addEventListener('change', async e => {
   if (!files.length) return;
   toast(`이미지 ${files.length}장 불러오는 중…`);
   for (const file of files) {
-    try { const {data} = await loadImage(file, 1200); S.favs.push({id:newId(), ...imgObj(data), genre:'', name:'', source:'', pos:50, frame:'auto'}); }
+    try { const {data, ratio} = await loadImage(file, 1400); S.favs.push({id:newId(), ...imgObj(data), genre:'', name:'', source:'', pos:50, px:50, zoom:100, ar:ratio, frame:'auto'}); }
     catch { toast(`${file.name} 파일을 읽지 못했어요`); }
   }
   renderFavList(); update(); toast('이미지를 추가했어요');
 });
+
+// 미리보기에서 이미지 끌어서 위치 조절, 휠로 확대
+function overflowOf(f, el){
+  const bw = el.clientWidth, bh = el.clientHeight, z = (f.zoom || 100) / 100, ar = f.ar || bh / bw;
+  let dw, dh;
+  if (ar >= bh / bw) { dw = bw * z; dh = dw * ar; } else { dh = bh * z; dw = dh / ar; }
+  return [dw - bw, dh - bh];
+}
+let pan = null;
+$('#cb').addEventListener('pointerdown', e => {
+  const el = e.target.closest('.fv .im'); if (!el) return;
+  const f = S.favs.find(x => x.id === el.closest('.fv').dataset.id); if (!f) return;
+  e.preventDefault();
+  const [ox, oy] = overflowOf(f, el);
+  pan = {f, el, x0:e.clientX, y0:e.clientY, px:f.px ?? 50, py:f.pos ?? 50, ox, oy, moved:false};
+  el.setPointerCapture(e.pointerId);
+  el.style.cursor = 'grabbing';
+});
+window.addEventListener('pointermove', e => {
+  if (!pan) return;
+  const {f, el} = pan, dx = (e.clientX - pan.x0) / scale, dy = (e.clientY - pan.y0) / scale;
+  const cl = v => Math.round(Math.max(0, Math.min(100, v)));
+  if (pan.ox > 1) f.px = cl(pan.px - dx / pan.ox * 100);
+  if (pan.oy > 1) f.pos = cl(pan.py - dy / pan.oy * 100);
+  pan.moved = true;
+  el.style.backgroundPosition = bgPos(f);
+});
+window.addEventListener('pointerup', () => {
+  if (!pan) return;
+  pan.el.style.cursor = ''; const m = pan.moved; pan = null;
+  if (m) { renderFavList(); save(); }
+});
+let wheelTimer;
+$('#cb').addEventListener('wheel', e => {
+  const el = e.target.closest('.fv .im'); if (!el) return;
+  const f = S.favs.find(x => x.id === el.closest('.fv').dataset.id); if (!f) return;
+  e.preventDefault();
+  f.zoom = Math.max(100, Math.min(400, (f.zoom || 100) + (e.deltaY < 0 ? 10 : -10)));
+  el.style.backgroundSize = bgSize(f);
+  clearTimeout(wheelTimer); wheelTimer = setTimeout(() => { renderFavList(); save(); }, 300);
+}, {passive:false});
 
 /* ───────── 편집기: 테마 ───────── */
 function renderThemeEd(){
@@ -610,6 +679,12 @@ function hydrate(o){
   const fix = x => x && x.data ? {...x, url:dataToURL(x.data)} : null;
   n.profile = fix(n.profile); n.header = fix(n.header);
   n.favs = (n.favs || []).map(fix).filter(Boolean);
+  n.favs.forEach(f => {
+    if (f.ar) return;
+    const im = new Image();
+    im.onload = () => { f.ar = im.naturalHeight / im.naturalWidth; if ((f.zoom || 100) !== 100) renderCard(); };
+    im.src = f.url;
+  });
   n.objs = (n.objs || []).map(x => x.type === 'sticker' ? fix(x) : x).filter(Boolean);
   return n;
 }

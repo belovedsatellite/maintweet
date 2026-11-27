@@ -105,10 +105,14 @@
             <select data-bind="cap"><option value="below">이미지 아래</option><option value="over">이미지 위에 겹치기</option><option value="none">표시 안 함</option></select>
           </label>
         </div>
+        <label class="field"><span class="lb">출처 위치</span>
+          <select data-bind="srcPos"><option value="right">캡션 오른쪽</option><option value="below">캡션 아래 줄</option></select>
+        </label>
         <label class="chk"><input type="checkbox" data-bind="favCenter"> 마지막 줄 가운데 정렬</label>
         <label class="field"><span class="lb">기본 액자</span><select data-bind="frameDef" id="frameSel"></select></label>
         <p class="hint">이미지마다 아래 목록에서 액자를 따로 고를 수도 있어요. 미술관 테마의 기본 액자는 금색 클래식이에요.</p>
       </div>
+      <p class="hint">미리보기에서 이미지를 끌면 보이는 위치가, 마우스 휠을 굴리면 확대 비율이 바뀌어요.</p>
       <label class="btn wide pri-soft">이미지 추가 (여러 장 선택 가능)<input type="file" accept="image/*" multiple id="favIn" hidden></label>
       <div id="favList" class="list"></div>
     </section>
